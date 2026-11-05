@@ -21,7 +21,7 @@ services:
   # Writes .env from .env.example with fresh secrets and prints the setup code.
   # Needs only Node, so it runs before anything is built.
   setup:
-    image: node:24.13.0-slim
+    image: node:26.12.1-slim
     profiles: ["setup"]
     working_dir: /repo
     command: ["node", "scripts/setup.mjs"]

@@ -1,0 +1,7 @@
+components/ui
+hooks/use-mobile.ts
+db/migrations
+pnpm-lock.yaml
+.claude/skills/next-dev-loop
+.claude/skills/shadcn
+.claude/skills/vercel-react-best-practices

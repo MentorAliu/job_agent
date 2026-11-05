@@ -1,0 +1,226 @@
+{
+  "basics": {
+    "id": "basics_00000001",
+    "name": "Jordan Sample",
+    "headline": "Senior Frontend Engineer",
+    "email": "jordan.sample@example.com",
+    "phone": "+382 67 000 000",
+    "location": "Podgorica, Montenegro",
+    "summary": "Frontend engineer with 7 years of experience building React and TypeScript applications for remote product teams."
+  },
+  "links": [
+    {
+      "id": "link_00000002",
+      "label": "GitHub",
+      "url": "https://github.com/jordansample"
+    },
+    {
+      "id": "link_00000003",
+      "label": "LinkedIn",
+      "url": "https://www.linkedin.com/in/jordansample"
+    },
+    {
+      "id": "link_00000004",
+      "label": "Portfolio",
+      "url": "https://jordansample.dev"
+    }
+  ],
+  "experience": [
+    {
+      "id": "role_00000005",
+      "title": "Senior Frontend Engineer",
+      "company": "Northwind Analytics",
+      "location": "Remote",
+      "startDate": "2022-03",
+      "endDate": "",
+      "current": true,
+      "summary": "Lead frontend engineer on the reporting product.",
+      "highlights": [
+        {
+          "id": "hl_00000006",
+          "text": "Rebuilt the dashboard in Next.js, cutting page load time from 4.1 s to 1.3 s."
+        },
+        {
+          "id": "hl_00000007",
+          "text": "Introduced a shared component library used by 4 product teams."
+        },
+        {
+          "id": "hl_00000008",
+          "text": "Mentored 3 junior engineers through weekly code reviews."
+        }
+      ],
+      "technologies": ["React", "Next.js", "TypeScript", "TanStack Query"]
+    },
+    {
+      "id": "role_00000009",
+      "title": "Frontend Engineer",
+      "company": "Blue Harbor Software",
+      "location": "Podgorica, Montenegro",
+      "startDate": "2019-06",
+      "endDate": "2022-02",
+      "current": false,
+      "summary": "",
+      "highlights": [
+        {
+          "id": "hl_00000010",
+          "text": "Built the customer onboarding flow, raising completion from 61% to 78%."
+        },
+        {
+          "id": "hl_00000011",
+          "text": "Migrated a 40k-line JavaScript codebase to TypeScript."
+        }
+      ],
+      "technologies": ["React", "Redux", "TypeScript", "Jest"]
+    },
+    {
+      "id": "role_00000012",
+      "title": "Junior Web Developer",
+      "company": "Pixel Forge",
+      "location": "Podgorica, Montenegro",
+      "startDate": "2018",
+      "endDate": "2019",
+      "current": false,
+      "summary": "Agency work for small business clients.",
+      "highlights": [
+        {
+          "id": "hl_00000013",
+          "text": "Delivered 12 marketing sites on WordPress and plain HTML/CSS."
+        }
+      ],
+      "technologies": ["JavaScript", "PHP", "WordPress"]
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj_00000014",
+      "name": "Open Timetable",
+      "role": "Maintainer",
+      "url": "https://github.com/jordansample/open-timetable",
+      "startDate": "2021",
+      "endDate": "",
+      "summary": "An open-source timetable builder for schools.",
+      "highlights": [
+        {
+          "id": "hl_00000015",
+          "text": "Reached 1,200 GitHub stars and 30 contributors."
+        }
+      ],
+      "technologies": ["Svelte", "TypeScript", "PostgreSQL"]
+    },
+    {
+      "id": "proj_00000016",
+      "name": "Budget Buddy",
+      "role": "",
+      "url": "",
+      "startDate": "2020-01",
+      "endDate": "2020-06",
+      "summary": "A personal finance app built to learn React Native.",
+      "highlights": [],
+      "technologies": ["React Native", "Firebase"]
+    }
+  ],
+  "skills": [
+    {
+      "id": "skill_00000017",
+      "name": "TypeScript",
+      "category": "Languages"
+    },
+    {
+      "id": "skill_00000018",
+      "name": "JavaScript",
+      "category": "Languages"
+    },
+    {
+      "id": "skill_00000019",
+      "name": "HTML",
+      "category": "Languages"
+    },
+    {
+      "id": "skill_00000020",
+      "name": "CSS",
+      "category": "Languages"
+    },
+    {
+      "id": "skill_00000021",
+      "name": "React",
+      "category": "Frameworks"
+    },
+    {
+      "id": "skill_00000022",
+      "name": "Next.js",
+      "category": "Frameworks"
+    },
+    {
+      "id": "skill_00000023",
+      "name": "Svelte",
+      "category": "Frameworks"
+    },
+    {
+      "id": "skill_00000024",
+      "name": "React Native",
+      "category": "Frameworks"
+    },
+    {
+      "id": "skill_00000025",
+      "name": "Node.js",
+      "category": "Backend"
+    },
+    {
+      "id": "skill_00000026",
+      "name": "PostgreSQL",
+      "category": "Databases"
+    },
+    {
+      "id": "skill_00000027",
+      "name": "Jest",
+      "category": "Testing"
+    },
+    {
+      "id": "skill_00000028",
+      "name": "Playwright",
+      "category": "Testing"
+    },
+    {
+      "id": "skill_00000029",
+      "name": "Git",
+      "category": "Tools"
+    },
+    {
+      "id": "skill_00000030",
+      "name": "Figma",
+      "category": "Tools"
+    }
+  ],
+  "education": [
+    {
+      "id": "edu_00000031",
+      "institution": "University of Montenegro",
+      "degree": "BSc",
+      "field": "Computer Science",
+      "startDate": "2014",
+      "endDate": "2018",
+      "details": ""
+    }
+  ],
+  "certifications": [
+    {
+      "id": "cert_00000032",
+      "name": "AWS Certified Cloud Practitioner",
+      "issuer": "Amazon Web Services",
+      "date": "2023-05",
+      "url": ""
+    }
+  ],
+  "languages": [
+    {
+      "id": "lang_00000033",
+      "name": "Montenegrin",
+      "level": "Native"
+    },
+    {
+      "id": "lang_00000034",
+      "name": "English",
+      "level": "C1"
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(pnpm dev)",
+      "Bash(pnpm build)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint *)",
+      "Bash(pnpm test *)",
+      "Bash(pnpm format *)",
+      "Bash(pnpm db:generate *)",
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm dlx shadcn@latest add *)",
+      "Bash(pnpm dlx shadcn@latest docs *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push -u origin claude/*)",
+      "Bash(git push origin claude/*)",
+      "Bash(docker compose ps *)",
+      "Bash(docker compose logs *)",
+      "Bash(docker compose --profile dev up *)",
+      "PowerShell(pnpm typecheck)",
+      "PowerShell(pnpm lint *)",
+      "PowerShell(pnpm test *)",
+      "PowerShell(git status *)",
+      "PowerShell(git diff *)",
+      "PowerShell(git add *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git push -u origin claude/*)",
+      "PowerShell(git push origin claude/*)",
+      "WebFetch(domain:nextjs.org)",
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:ui.shadcn.com)",
+      "WebFetch(domain:tanstack.com)",
+      "WebFetch(domain:react-hook-form.com)",
+      "WebFetch(domain:zod.dev)",
+      "WebFetch(domain:orm.drizzle.team)",
+      "WebFetch(domain:www.better-auth.com)",
+      "WebFetch(domain:better-auth.com)",
+      "WebFetch(domain:www.inngest.com)",
+      "WebFetch(domain:nuqs.dev)",
+      "WebFetch(domain:react-pdf.org)",
+      "WebFetch(domain:platform.claude.com)",
+      "WebFetch(domain:docs.claude.com)",
+      "WebFetch(domain:code.claude.com)",
+      "mcp__next-devtools__*",
+      "mcp__shadcn__*"
+    ],
+    "ask": [
+      "Bash(pnpm add *)",
+      "Bash(pnpm remove *)",
+      "Bash(git push)",
+      "Bash(git push origin)",
+      "Bash(git push * HEAD)",
+      "Bash(git push * main)",
+      "Bash(git push * main *)",
+      "Bash(git push *:main)",
+      "Bash(git push *:main *)",
+      "Bash(git push *heads/main*)",
+      "Bash(git push * +*)",
+      "Bash(git push * -*)",
+      "Bash(git push -f *)",
+      "Bash(git push --force*)",
+      "Bash(git push --all*)",
+      "Bash(git push --mirror*)",
+      "Bash(docker compose down *)",
+      "PowerShell(git push)",
+      "PowerShell(git push origin)",
+      "PowerShell(git push * HEAD)",
+      "PowerShell(git push * main)",
+      "PowerShell(git push * main *)",
+      "PowerShell(git push *:main)",
+      "PowerShell(git push *:main *)",
+      "PowerShell(git push *heads/main*)",
+      "PowerShell(git push * +*)",
+      "PowerShell(git push * -*)",
+      "PowerShell(git push -f *)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git push --all*)",
+      "PowerShell(git push --mirror*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(!.env.example)",
+      "Read(./.data/**)"
+    ]
+  },
+  "enabledMcpjsonServers": ["next-devtools", "shadcn"],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/format.mjs"],
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/done-check.mjs"],
+            "timeout": 600
+          }
+        ]
+      }
+    ]
+  }
+}

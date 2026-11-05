@@ -1,0 +1,1 @@
+ALTER TABLE "seen_link" ADD COLUMN "try_again" boolean DEFAULT false NOT NULL;

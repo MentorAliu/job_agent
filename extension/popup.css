@@ -1,0 +1,55 @@
+:root {
+  color-scheme: light dark;
+  font:
+    14px/1.45 system-ui,
+    sans-serif;
+}
+body {
+  width: 300px;
+  margin: 0;
+  padding: 14px 16px 16px;
+}
+h1 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+p {
+  margin: 0 0 10px;
+}
+.small {
+  margin: 10px 0 0;
+  font-size: 12px;
+  opacity: 0.75;
+}
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+select,
+button {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+}
+select {
+  padding: 6px;
+  margin-bottom: 10px;
+}
+button,
+#open {
+  display: block;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #2f5bd3;
+  color: #fff;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.6;
+}

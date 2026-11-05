@@ -1,0 +1,31 @@
+{
+  "requestId": "req_01FixtureReadEmail00000000001",
+  "body": {
+    "id": "msg_01FixtureReadEmail00000000001",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-sonnet-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"reason\":\"Dana, a recruiter at Northwind Labs, invites the candidate to a first call about the Senior Frontend Engineer role.\",\"roleRef\":\"r1\",\"author\":\"employer\",\"outcome\":\"interview\",\"quote\":\"We'd love to invite you to a 30-minute intro call with our engineering manager next week.\",\"sure\":true,\"senderName\":\"Dana Whitfield\",\"subject\":\"Your application: Senior Frontend Engineer\",\"summary\":\"Northwind Labs wants a 30-minute intro call with their engineering manager next week. Dana asks which times suit you.\",\"keyPoints\":[\"30-minute intro call with the engineering manager, Priya Shah\",\"Next week, Monday 26 to Friday 30 October 2026\",\"They work 9:00 to 17:00 CET\"],\"replyNeeded\":true,\"replySubject\":\"Re: Your application: Senior Frontend Engineer\",\"replyBody\":\"Hi Dana,\\n\\nThank you for getting back to me. I'd be glad to have an intro call with Priya next week.\\n\\nThese times work for me, all in Central European Time (Europe/Belgrade): [two or three times that suit you].\\n\\nIf none of them suit, I'm happy to fit around Priya's calendar.\\n\\nBest regards,\\nJordan Sample\"}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 1684,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 412,
+      "server_tool_use": null,
+      "service_tier": "standard",
+      "inference_geo": "global"
+    }
+  }
+}

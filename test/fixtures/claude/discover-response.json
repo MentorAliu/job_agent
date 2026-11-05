@@ -1,0 +1,86 @@
+{
+  "requestId": "req_01FixtureDiscover0000001",
+  "body": {
+    "id": "msg_01FixtureDiscover0000001",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-5-5",
+    "content": [
+      {
+        "type": "server_tool_use",
+        "id": "srvtoolu_01FixtureSearchA",
+        "name": "web_search",
+        "input": { "query": "senior React TypeScript engineer remote Europe" },
+        "caller": { "type": "direct" }
+      },
+      {
+        "type": "web_search_tool_result",
+        "tool_use_id": "srvtoolu_01FixtureSearchA",
+        "caller": { "type": "direct" },
+        "content": [
+          {
+            "type": "web_search_result",
+            "url": "https://boards.greenhouse.io/northwindlabs/jobs/4012345",
+            "title": "Senior Frontend Engineer (React) - Northwind Labs",
+            "page_age": "3 days ago",
+            "encrypted_content": "EpcBCioIAhgBIiQ0ZmFrZS1lbmNyeXB0ZWQtY29udGVudA"
+          },
+          {
+            "type": "web_search_result",
+            "url": "https://jobs.lever.co/blueharbor/3f2b1c9e-4d5a-4e6f-8a7b-9c0d1e2f3a4b?lever-source=board",
+            "title": "Full-stack Engineer, TypeScript - Blue Harbor",
+            "page_age": "1 week ago",
+            "encrypted_content": "EpcBCioIAhgBIiQ0ZmFrZS1lbmNyeXB0ZWQtY29udGVudA"
+          },
+          {
+            "type": "web_search_result",
+            "url": "https://boards.greenhouse.io/northwindlabs",
+            "title": "Jobs at Northwind Labs",
+            "page_age": null,
+            "encrypted_content": "EpcBCioIAhgBIiQ0ZmFrZS1lbmNyeXB0ZWQtY29udGVudA"
+          }
+        ]
+      },
+      {
+        "type": "server_tool_use",
+        "id": "srvtoolu_01FixtureSearchB",
+        "name": "web_search",
+        "input": { "query": "remote Node.js developer EMEA" },
+        "caller": { "type": "direct" }
+      },
+      {
+        "type": "web_search_tool_result",
+        "tool_use_id": "srvtoolu_01FixtureSearchB",
+        "caller": { "type": "direct" },
+        "content": [
+          {
+            "type": "web_search_result",
+            "url": "https://jobs.ashbyhq.com/pixelforge/9b8a7c6d-5e4f-4a3b-9c2d-1e0f9a8b7c6d",
+            "title": "Backend Engineer (Node.js) - Pixel Forge",
+            "page_age": "2 days ago",
+            "encrypted_content": "EpcBCioIAhgBIiQ0ZmFrZS1lbmNyeXB0ZWQtY29udGVudA"
+          },
+          {
+            "type": "web_search_result",
+            "url": "https://boards.greenhouse.io/northwindlabs/jobs/4012345?utm_source=search",
+            "title": "Senior Frontend Engineer (React) - Northwind Labs",
+            "page_age": "3 days ago",
+            "encrypted_content": "EpcBCioIAhgBIiQ0ZmFrZS1lbmNyeXB0ZWQtY29udGVudA"
+          }
+        ]
+      },
+      { "type": "text", "text": "done", "citations": null }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "usage": {
+      "input_tokens": 9120,
+      "output_tokens": 64,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": null,
+      "server_tool_use": { "web_search_requests": 2, "web_fetch_requests": 0 },
+      "service_tier": "standard"
+    }
+  }
+}

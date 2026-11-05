@@ -1,0 +1,75 @@
+{
+  "id": "resp_0a1b2c3d4e5f60718293a4b5c6d7e8f9",
+  "object": "response",
+  "created_at": 1793432400,
+  "status": "completed",
+  "model": "gpt-6-luna",
+  "error": null,
+  "incomplete_details": null,
+  "output": [
+    {
+      "id": "rs_01",
+      "type": "reasoning",
+      "summary": []
+    },
+    {
+      "id": "ws_01",
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "queries": ["senior frontend engineer remote Europe greenhouse"]
+      }
+    },
+    {
+      "id": "ws_02",
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "open_page",
+        "url": "https://job-boards.greenhouse.io/northwindlabs"
+      }
+    },
+    {
+      "id": "ws_03",
+      "type": "web_search_call",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "queries": ["senior react engineer remote ashby"]
+      }
+    },
+    {
+      "id": "msg_01",
+      "type": "message",
+      "role": "assistant",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "text": "{\"urls\":[\"https://job-boards.greenhouse.io/northwindlabs/jobs/4000000001\",\"https://jobs.ashbyhq.com/contosohealth/2b6f7a10-0000-4000-8000-000000000001\"]}"
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 21400,
+    "input_tokens_details": {
+      "cached_tokens": 4096,
+      "cache_write_tokens": 2048
+    },
+    "output_tokens": 1830,
+    "output_tokens_details": { "reasoning_tokens": 1200 },
+    "total_tokens": 23230
+  },
+  "tool_usage": {
+    "image_gen": {
+      "input_tokens": 0,
+      "input_tokens_details": { "image_tokens": 0, "text_tokens": 0 },
+      "output_tokens": 0,
+      "total_tokens": 0
+    },
+    "web_search": { "num_requests": 2 }
+  }
+}

@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Job Agent</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h1>Job Agent</h1>
+    <p id="status">Looking for this role…</p>
+    <form id="fill" hidden>
+      <label for="role">Role</label>
+      <select id="role"></select>
+      <button type="submit">Fill this form</button>
+      <p class="small">
+        You check the form and press Submit yourself. The role moves to
+        Applied in Job Agent when you do.
+      </p>
+    </form>
+    <a id="open" href="#" target="_blank" hidden>Open Job Agent</a>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

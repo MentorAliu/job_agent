@@ -1,0 +1,31 @@
+{
+  "requestId": "req_01FixtureClaimCheck000000001",
+  "body": {
+    "id": "msg_01FixtureClaimCheck000000001",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-haiku-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"verdicts\":[{\"itemId\":\"cv/summary\",\"reason\":\"The headline, summary and role fact give 7 years of React and TypeScript for remote teams and leading the reporting product's frontend.\",\"supported\":true},{\"itemId\":\"cv/role_00000005:0\",\"reason\":\"hl_00000006 says the same; the role fact names the reporting product.\",\"supported\":true},{\"itemId\":\"cv/role_00000005:1\",\"reason\":\"hl_00000007 gives the library and the 4 teams, and the role fact lists React.\",\"supported\":true},{\"itemId\":\"cv/role_00000005:2\",\"reason\":\"The cited fact says the candidate mentored 3 junior engineers, not that they led a team of 12.\",\"supported\":false},{\"itemId\":\"cv/role_00000009:1\",\"reason\":\"hl_00000010 gives the flow and the numbers, and the role fact lists React.\",\"supported\":true},{\"itemId\":\"cv/proj_00000014:0\",\"reason\":\"The project fact and hl_00000015 give the role, TypeScript, the stars and the contributors.\",\"supported\":true},{\"itemId\":\"cover_letter/p0\",\"reason\":\"The headline, summary and role fact say all of it.\",\"supported\":true},{\"itemId\":\"cover_letter/p1\",\"reason\":\"hl_00000006 and hl_00000011 say both results; the first sentence is about the posting.\",\"supported\":true},{\"itemId\":\"cover_letter/p2\",\"reason\":\"hl_00000007 and hl_00000008 say both.\",\"supported\":true},{\"itemId\":\"cover_letter/p3\",\"reason\":\"The role fact names the analytics reporting product; the rest is about the employer.\",\"supported\":true},{\"itemId\":\"answers/a0\",\"reason\":\"The role fact says the candidate leads the reporting product's frontend in React, remotely.\",\"supported\":true},{\"itemId\":\"answers/a1\",\"reason\":\"The summary gives 7 years, and both role facts list React and TypeScript.\",\"supported\":true},{\"itemId\":\"cv/made-up-key\",\"reason\":\"An item that was never sent.\",\"supported\":false}]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 2140,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 412,
+      "server_tool_use": null,
+      "service_tier": "standard",
+      "inference_geo": "global"
+    }
+  }
+}

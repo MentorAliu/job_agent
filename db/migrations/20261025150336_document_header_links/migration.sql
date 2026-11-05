@@ -1,0 +1,1 @@
+ALTER TABLE "document" ADD COLUMN "header_links" jsonb;

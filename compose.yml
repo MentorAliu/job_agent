@@ -1,0 +1,154 @@
+# Job Agent: local stack
+#
+#   Your own copy, everything in Docker:
+#     node scripts/setup.mjs                      # writes .env, then builds, starts and opens the app
+#     docker compose --profile app up -d --build  # what it starts: Postgres + migrations + web + self-hosted Inngest + Redis
+#     docker compose run --rm reset-password      # if you forget the password
+#   Without Node on your computer, `docker compose run --rm setup` writes .env,
+#   then the `up` line above starts the app.
+#
+#   Development (Next.js runs on your machine with `pnpm dev`):
+#     docker compose --profile dev up -d      # Postgres + Inngest Dev Server (UI: http://localhost:8288)
+#
+# Use one profile at a time (both expose the Inngest port). Every port is open
+# to this computer only (127.0.0.1), not to others on the same network. Setup
+# moves APP_PORT, DB_PORT or INNGEST_PORT in .env when another program has
+# the usual one. COMPOSE_PROJECT_NAME in .env, which setup sets when an
+# earlier copy left its database behind, names the project instead.
+name: job-agent
+
+services:
+  # Writes .env from .env.example with fresh secrets and prints the setup code.
+  # Needs only Node, so it runs before anything is built.
+  setup:
+    image: node:24.13.0-slim
+    profiles: ["setup"]
+    working_dir: /repo
+    command: ["node", "scripts/setup.mjs"]
+    environment:
+      # There's no Docker in here to start the app with: setup says how.
+      SETUP_IN_CONTAINER: "1"
+    volumes:
+      - ./:/repo
+
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: jobagent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jobagent}
+      POSTGRES_DB: jobagent
+    ports:
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
+    volumes:
+      # Postgres 18+ images keep data under /var/lib/postgresql (not .../data)
+      - pgdata:/var/lib/postgresql
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # -h forces a TCP check: on first boot the init server listens on the socket only
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U jobagent -d jobagent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  # Inngest Dev Server for local development. It calls the app on your machine.
+  inngest-dev:
+    image: inngest/inngest:v1.49.0 # the version the app is tested with; Dependabot proposes newer ones
+    profiles: ["dev"]
+    command: "inngest dev -u http://host.docker.internal:${APP_PORT:-3000}/api/inngest"
+    ports:
+      - "127.0.0.1:${INNGEST_PORT:-8288}:8288"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # One-off: applies Drizzle migrations, then exits. Uses the build stage, which has drizzle-kit.
+  migrate:
+    build:
+      context: .
+      target: builder
+    profiles: ["app"]
+    command: ["pnpm", "db:migrate"]
+    environment:
+      DATABASE_URL: postgres://jobagent:${POSTGRES_PASSWORD:-jobagent}@db:5432/jobagent
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # One-off: gives the account a new password and prints it. Uses the build
+  # stage, which has the scripts and every package.
+  reset-password:
+    build:
+      context: .
+      target: builder
+    profiles: ["tools"]
+    command: ["node", "scripts/reset-password.mjs"]
+    environment:
+      DATABASE_URL: postgres://jobagent:${POSTGRES_PASSWORD:-jobagent}@db:5432/jobagent
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: .
+    profiles: ["app"]
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://jobagent:${POSTGRES_PASSWORD:-jobagent}@db:5432/jobagent
+      BETTER_AUTH_URL: http://localhost:${APP_PORT:-3000}
+      INNGEST_DEV: "0"
+      INNGEST_BASE_URL: http://inngest:8288
+      # The address Inngest calls the app at, whoever starts a sync. The app
+      # also syncs itself with Inngest each time it starts (instrumentation.ts).
+      INNGEST_SERVE_ORIGIN: http://web:3000
+      STORAGE_DRIVER: local
+      STORAGE_DIR: /data/files
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    volumes:
+      - files:/data/files
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  # Self-hosted Inngest server: history in the `inngest` Postgres database,
+  # queue and run state in Redis (without Redis it keeps them inside the container).
+  inngest:
+    image: inngest/inngest:v1.49.0 # the version the app is tested with; Dependabot proposes newer ones
+    profiles: ["app"]
+    restart: unless-stopped
+    command: "inngest start --sdk-url http://web:3000/api/inngest --poll-interval 60"
+    environment:
+      INNGEST_EVENT_KEY: ${INNGEST_EVENT_KEY:-}
+      INNGEST_SIGNING_KEY: ${INNGEST_SIGNING_KEY:-}
+      INNGEST_POSTGRES_URI: postgres://jobagent:${POSTGRES_PASSWORD:-jobagent}@db:5432/inngest
+      INNGEST_REDIS_URI: redis://redis:6379
+    ports:
+      - "127.0.0.1:${INNGEST_PORT:-8288}:8288"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["app"]
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
+  redisdata:
+  files:

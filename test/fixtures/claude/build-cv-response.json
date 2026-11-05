@@ -1,0 +1,31 @@
+{
+  "requestId": "req_01FixtureBuildCv000000001",
+  "body": {
+    "id": "msg_01FixtureBuildCv0000000001",
+    "type": "message",
+    "role": "assistant",
+    "model": "claude-sonnet-5-5",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"summary\":{\"text\":\"Senior frontend engineer with 7 years of experience building React and TypeScript applications for remote product teams. Leads the frontend of an analytics reporting product.\",\"sources\":[\"basics_00000001\",\"role_00000005\"]},\"experience\":[{\"roleId\":\"role_00000005\",\"highlights\":[{\"text\":\"Rebuilt the reporting dashboard in Next.js, cutting page load time from 4.1 s to 1.3 s.\",\"sources\":[\"hl_00000006\"]},{\"text\":\"Introduced a shared React component library used by 4 product teams.\",\"sources\":[\"hl_00000007\",\"role_00000005\"]},{\"text\":\"Led a team of 12 engineers through the dashboard rebuild.\",\"sources\":[\"hl_00000008\"]},{\"text\":\"Mentored 3 junior engineers through weekly code reviews.\",\"sources\":[\"hl_00000008\"]}]},{\"roleId\":\"role_00000009\",\"highlights\":[{\"text\":\"Migrated a 40k-line JavaScript codebase to TypeScript.\",\"sources\":[\"hl_00000011\"]},{\"text\":\"Built the customer onboarding flow in React, raising completion from 61% to 78%.\",\"sources\":[\"hl_00000010\",\"role_00000009\"]},{\"text\":\"Built GraphQL APIs in Go for the billing service.\",\"sources\":[\"hl_99999999\"]}]},{\"roleId\":\"role_00000012\",\"highlights\":[]}],\"projects\":[{\"projectId\":\"proj_00000014\",\"highlights\":[{\"text\":\"Maintain Open Timetable, an open-source TypeScript timetable builder with 1,200 GitHub stars and 30 contributors.\",\"sources\":[\"proj_00000014\",\"hl_00000015\"]}]}],\"skillIds\":[\"skill_00000021\",\"skill_00000017\",\"skill_00000022\",\"skill_00000018\",\"skill_00000025\",\"skill_00000027\",\"skill_00000028\",\"skill_00000019\",\"skill_00000020\",\"skill_00000029\"],\"jobKeywords\":[\"React\",\"TypeScript\",\"Next.js\",\"Code reviews\",\"Jest\",\"Figma\",\"GraphQL\",\"Accessibility\"]}"
+      }
+    ],
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 412,
+      "cache_creation_input_tokens": 1980,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 1980,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 1214,
+      "server_tool_use": null,
+      "service_tier": "standard",
+      "inference_geo": "global"
+    }
+  }
+}

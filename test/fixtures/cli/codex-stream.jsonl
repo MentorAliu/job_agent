@@ -1,0 +1,8 @@
+{"type":"thread.started","thread_id":"01a18799-0000-7000-8000-000000000002"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"reasoning","text":"Searching the named job sites."}}
+{"type":"item.started","item":{"id":"item_1","type":"web_search","query":"site:job-boards.greenhouse.io senior frontend React remote Europe"}}
+{"type":"item.completed","item":{"id":"item_1","type":"web_search","query":"site:job-boards.greenhouse.io senior frontend React remote Europe"}}
+{"type":"item.completed","item":{"id":"item_2","type":"web_search","query":"site:jobs.ashbyhq.com senior React remote EMEA"}}
+{"type":"item.completed","item":{"id":"item_3","type":"agent_message","text":"{\"urls\": [\"https://job-boards.greenhouse.io/northwindlabs/jobs/4000000001\"]}"}}
+{"type":"turn.completed","usage":{"input_tokens":24250,"cached_input_tokens":11008,"output_tokens":912,"reasoning_output_tokens":640}}

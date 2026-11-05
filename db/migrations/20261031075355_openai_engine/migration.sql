@@ -1,0 +1,1 @@
+ALTER TYPE "agent_engine" ADD VALUE 'openai_api';

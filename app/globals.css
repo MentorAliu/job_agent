@@ -1,0 +1,270 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-destructive-ink: var(--destructive-ink);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
+  --color-primary-soft: var(--primary-soft);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-success: var(--success);
+  --color-success-ink: var(--success-ink);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-ink: var(--warning-ink);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-track: var(--track);
+  --color-status-shortlisted: var(--status-shortlisted);
+  --color-status-shortlisted-ink: var(--status-shortlisted-ink);
+  --color-status-shortlisted-soft: var(--status-shortlisted-soft);
+  --color-status-ready: var(--status-ready);
+  --color-status-ready-ink: var(--status-ready-ink);
+  --color-status-ready-soft: var(--status-ready-soft);
+  --color-status-applied: var(--status-applied);
+  --color-status-applied-ink: var(--status-applied-ink);
+  --color-status-applied-soft: var(--status-applied-soft);
+  --color-status-interviewing: var(--status-interviewing);
+  --color-status-interviewing-ink: var(--status-interviewing-ink);
+  --color-status-interviewing-soft: var(--status-interviewing-soft);
+  --color-status-offer: var(--status-offer);
+  --color-status-offer-ink: var(--status-offer-ink);
+  --color-status-offer-soft: var(--status-offer-soft);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/*
+ * Cool neutrals (hue 265) with one cobalt accent. Each status color comes as
+ * a trio: the solid color for dots and rings, an ink for text, and a soft
+ * fill for pills.
+ */
+:root {
+  color-scheme: light;
+  --background: oklch(0.985 0.003 265);
+  --foreground: oklch(0.2 0.02 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.02 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.02 265);
+  --primary: oklch(0.52 0.2 264);
+  --primary-foreground: oklch(0.99 0 0);
+  --primary-ink: oklch(0.45 0.2 264);
+  --primary-soft: oklch(0.95 0.036 264);
+  --secondary: oklch(0.955 0.008 265);
+  --secondary-foreground: oklch(0.2 0.02 265);
+  --muted: oklch(0.955 0.008 265);
+  --muted-foreground: oklch(0.5 0.018 265);
+  --accent: oklch(0.955 0.008 265);
+  --accent-foreground: oklch(0.2 0.02 265);
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-ink: oklch(0.5 0.18 25);
+  --destructive-soft: oklch(0.955 0.03 25);
+  --success: oklch(0.62 0.15 155);
+  --success-ink: oklch(0.46 0.12 155);
+  --success-soft: oklch(0.95 0.045 155);
+  --warning: oklch(0.74 0.15 70);
+  --warning-ink: oklch(0.5 0.12 60);
+  --warning-soft: oklch(0.96 0.05 85);
+  --warning-foreground: oklch(0.25 0.05 60);
+  --neutral: oklch(0.72 0.01 265);
+  --neutral-soft: oklch(0.95 0.004 265);
+  --track: oklch(0.92 0.006 265);
+  --status-shortlisted: oklch(0.56 0.17 295);
+  --status-shortlisted-ink: oklch(0.45 0.16 295);
+  --status-shortlisted-soft: oklch(0.955 0.03 295);
+  --status-ready: oklch(0.62 0.11 195);
+  --status-ready-ink: oklch(0.45 0.08 200);
+  --status-ready-soft: oklch(0.955 0.03 195);
+  --status-applied: oklch(0.62 0.13 235);
+  --status-applied-ink: oklch(0.45 0.12 240);
+  --status-applied-soft: oklch(0.955 0.025 235);
+  --status-interviewing: oklch(0.74 0.15 70);
+  --status-interviewing-ink: oklch(0.5 0.12 60);
+  --status-interviewing-soft: oklch(0.96 0.05 85);
+  --status-offer: oklch(0.62 0.15 150);
+  --status-offer-ink: oklch(0.45 0.12 150);
+  --status-offer-soft: oklch(0.955 0.045 150);
+  --border: oklch(0.91 0.008 265);
+  --input: oklch(0.86 0.01 265);
+  --ring: oklch(0.52 0.2 264);
+  /*
+   * Chart colors. --chart-1 to --chart-4 are one palette, in the order the
+   * spend charts stack them, checked so neighbors stay apart for color-blind
+   * eyes and each clears 3:1 on a card. The funnel's steps are one cobalt
+   * ramp, lightest first; dark mode runs it the other way.
+   */
+  --chart-1: oklch(0.52 0.2 264);
+  --chart-2: oklch(0.62 0.11 195);
+  --chart-3: oklch(0.56 0.17 295);
+  --chart-4: oklch(0.66 0.15 60);
+  --chart-5: oklch(0.62 0.15 150);
+  --funnel-1: oklch(0.77 0.1 264);
+  --funnel-2: oklch(0.7 0.13 264);
+  --funnel-3: oklch(0.635 0.16 264);
+  --funnel-4: oklch(0.57 0.18 264);
+  --funnel-5: oklch(0.505 0.19 264);
+  --funnel-6: oklch(0.44 0.18 264);
+  --funnel-7: oklch(0.375 0.16 264);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.97 0.005 265);
+  --sidebar-foreground: oklch(0.2 0.02 265);
+  --sidebar-primary: oklch(0.52 0.2 264);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.945 0.009 265);
+  --sidebar-accent-foreground: oklch(0.2 0.02 265);
+  --sidebar-border: oklch(0.91 0.008 265);
+  --sidebar-ring: oklch(0.52 0.2 264);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.17 0.012 265);
+  --foreground: oklch(0.95 0.005 265);
+  --card: oklch(0.205 0.014 265);
+  --card-foreground: oklch(0.95 0.005 265);
+  --popover: oklch(0.215 0.014 265);
+  --popover-foreground: oklch(0.95 0.005 265);
+  --primary: oklch(0.68 0.16 264);
+  --primary-foreground: oklch(0.16 0.02 265);
+  --primary-ink: oklch(0.83 0.1 264);
+  --primary-soft: oklch(0.3 0.07 264);
+  --secondary: oklch(0.25 0.015 265);
+  --secondary-foreground: oklch(0.95 0.005 265);
+  --muted: oklch(0.25 0.015 265);
+  --muted-foreground: oklch(0.72 0.015 265);
+  --accent: oklch(0.25 0.015 265);
+  --accent-foreground: oklch(0.95 0.005 265);
+  --destructive: oklch(0.7 0.16 25);
+  --destructive-ink: oklch(0.8 0.12 25);
+  --destructive-soft: oklch(0.3 0.06 25);
+  --success: oklch(0.75 0.15 155);
+  --success-ink: oklch(0.83 0.12 155);
+  --success-soft: oklch(0.28 0.05 155);
+  --warning: oklch(0.8 0.13 75);
+  --warning-ink: oklch(0.86 0.11 80);
+  --warning-soft: oklch(0.31 0.05 75);
+  --warning-foreground: oklch(0.2 0.03 75);
+  --neutral: oklch(0.55 0.012 265);
+  --neutral-soft: oklch(0.26 0.01 265);
+  --track: oklch(0.3 0.012 265);
+  --status-shortlisted: oklch(0.7 0.15 295);
+  --status-shortlisted-ink: oklch(0.84 0.09 295);
+  --status-shortlisted-soft: oklch(0.3 0.07 295);
+  --status-ready: oklch(0.75 0.11 195);
+  --status-ready-ink: oklch(0.85 0.07 195);
+  --status-ready-soft: oklch(0.3 0.05 200);
+  --status-applied: oklch(0.72 0.12 235);
+  --status-applied-ink: oklch(0.84 0.08 235);
+  --status-applied-soft: oklch(0.3 0.06 240);
+  --status-interviewing: oklch(0.8 0.13 75);
+  --status-interviewing-ink: oklch(0.86 0.1 80);
+  --status-interviewing-soft: oklch(0.31 0.05 75);
+  --status-offer: oklch(0.75 0.14 150);
+  --status-offer-ink: oklch(0.84 0.1 150);
+  --status-offer-soft: oklch(0.29 0.05 150);
+  --border: oklch(0.29 0.014 265);
+  --input: oklch(0.37 0.014 265);
+  --ring: oklch(0.68 0.16 264);
+  --chart-1: oklch(0.62 0.17 264);
+  --chart-2: oklch(0.65 0.11 195);
+  --chart-3: oklch(0.62 0.15 295);
+  --chart-4: oklch(0.66 0.14 70);
+  --chart-5: oklch(0.75 0.14 150);
+  --funnel-1: oklch(0.42 0.12 264);
+  --funnel-2: oklch(0.487 0.14 264);
+  --funnel-3: oklch(0.554 0.16 264);
+  --funnel-4: oklch(0.621 0.17 264);
+  --funnel-5: oklch(0.688 0.16 264);
+  --funnel-6: oklch(0.755 0.13 264);
+  --funnel-7: oklch(0.822 0.1 264);
+  --sidebar: oklch(0.155 0.01 265);
+  --sidebar-foreground: oklch(0.95 0.005 265);
+  --sidebar-primary: oklch(0.68 0.16 264);
+  --sidebar-primary-foreground: oklch(0.16 0.02 265);
+  --sidebar-accent: oklch(0.22 0.014 265);
+  --sidebar-accent-foreground: oklch(0.95 0.005 265);
+  --sidebar-border: oklch(0.29 0.014 265);
+  --sidebar-ring: oklch(0.68 0.16 264);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/*
+ * The phone's tab bar along the bottom. Toasts and the forms' Save bar sit
+ * above it instead of under it. Below the split view, a page's own bar of
+ * buttons sits there too (the inbox's Skip and Shortlist, the apply kit's
+ * Mark as applied), and toasts clear it so they never cover those buttons.
+ */
+:root {
+  --tab-bar-height: calc(3.5rem + env(safe-area-inset-bottom));
+  --bottom-bar-height: 6rem;
+}
+
+@media (width < 48rem) {
+  [data-slot="toast-viewport"] {
+    bottom: calc(var(--tab-bar-height) + 1rem);
+  }
+  body:has([data-bottom-bar]) [data-slot="toast-viewport"] {
+    bottom: calc(var(--tab-bar-height) + var(--bottom-bar-height) + 0.5rem);
+  }
+}
+
+@media (48rem <= width < 64rem) {
+  body:has([data-bottom-bar]) [data-slot="toast-viewport"] {
+    bottom: calc(var(--bottom-bar-height) + 0.5rem);
+  }
+}

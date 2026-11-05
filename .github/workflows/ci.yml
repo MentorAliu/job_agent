@@ -1,0 +1,39 @@
+# Typecheck, lint, tests and build on every pull request and every push to
+# main. Tests use recorded responses, so no secrets or API keys are needed.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      # Uses the pnpm version in package.json's packageManager.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+        env:
+          # The build reads no secret; these only satisfy code that expects
+          # them to be set.
+          BETTER_AUTH_SECRET: ci-build-only-not-a-secret-ci-build-only
+          BETTER_AUTH_URL: http://localhost:3000
+          DATABASE_URL: postgres://jobagent:jobagent@localhost:5432/jobagent

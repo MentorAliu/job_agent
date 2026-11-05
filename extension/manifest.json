@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Job Agent form filler",
+  "version": "1.0.0",
+  "description": "Fills an application form from your Job Agent apply kit. You check it and press Submit yourself.",
+  "action": {
+    "default_title": "Fill this application form",
+    "default_popup": "popup.html"
+  },
+  "background": { "service_worker": "background.js", "type": "module" },
+  "permissions": ["activeTab", "scripting", "storage", "webNavigation"],
+  "host_permissions": [
+    "__APP_ORIGIN__/*",
+    "https://*.greenhouse.io/*",
+    "https://*.lever.co/*",
+    "https://*.ashbyhq.com/*",
+    "https://*.workable.com/*",
+    "https://*.smartrecruiters.com/*",
+    "https://*.recruitee.com/*",
+    "https://*.teamtailor.com/*",
+    "https://*.personio.de/*",
+    "https://*.personio.com/*",
+    "https://*.bamboohr.com/*",
+    "https://*.breezy.hr/*",
+    "https://*.jobvite.com/*",
+    "https://*.pinpointhq.com/*",
+    "https://*.homerun.co/*"
+  ]
+}

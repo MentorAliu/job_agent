@@ -1,0 +1,6 @@
+/*
+ * PDF.js's own styles for the pages, their text and their links. They sit in
+ * the components layer, so the app's unlayered rules (such as color-scheme on
+ * :root) and Tailwind's utilities still win over them.
+ */
+@import "pdfjs-dist/legacy/web/pdf_viewer.css" layer(components);

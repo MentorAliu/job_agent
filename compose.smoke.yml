@@ -1,0 +1,54 @@
+# Smoke test stack: the app profile with a fake Claude API, run by `pnpm smoke`.
+#
+#   docker compose -p job-agent-smoke --env-file e2e/smoke.env \
+#     -f compose.yml -f compose.smoke.yml --profile app up --build -d
+#
+# Its own project name, so its containers, volumes and data stay apart from
+# the real stack's. Nothing here reads .env: the app gets a fake API key and
+# sends every Claude call to the fake-claude service, which answers with the
+# recorded responses in test/fixtures/claude.
+services:
+  db:
+    ports: !reset []
+
+  inngest:
+    ports: !reset []
+    environment:
+      INNGEST_EVENT_KEY: ${INNGEST_EVENT_KEY}
+      INNGEST_SIGNING_KEY: ${INNGEST_SIGNING_KEY}
+
+  web:
+    env_file: !reset []
+    environment:
+      ANTHROPIC_API_KEY: sk-ant-smoke-not-a-real-key
+      ANTHROPIC_BASE_URL: http://fake-claude:4010
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      INNGEST_EVENT_KEY: ${INNGEST_EVENT_KEY}
+      INNGEST_SIGNING_KEY: ${INNGEST_SIGNING_KEY}
+    depends_on:
+      fake-claude:
+        condition: service_healthy
+
+  fake-claude:
+    image: node:24.13.0-slim
+    profiles: ["app"]
+    command: ["node", "/srv/fake-claude/server.mjs"]
+    environment:
+      FIXTURES_DIR: /fixtures
+      PUBLIC_BASE_URL: http://fake-claude:4010
+    volumes:
+      - ./e2e/fake-claude:/srv/fake-claude:ro
+      - ./test/fixtures:/fixtures:ro
+    ports:
+      - "127.0.0.1:${FAKE_CLAUDE_PORT}:4010"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4010/__health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 2s
+      timeout: 5s
+      retries: 30

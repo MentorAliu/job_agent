@@ -91,7 +91,23 @@ vi.mock("@/lib/dal/profile", () => ({
   saveStandardAnswer: (input: unknown) => saveStandardAnswer(input),
 }));
 
+class AddRoleError extends Error {}
+const ADDED_ROLE_ID = "5b6c7d8e-9f0a-4b1c-8d2e-3f4a5b6c7d8e";
+const addRole = vi.fn(async (input: unknown) => {
+  void input;
+  return ADDED_ROLE_ID;
+});
+const markAddUnsent = vi.fn(async (...args: unknown[]) => {
+  void args;
+});
+vi.mock("@/lib/dal/added-roles", () => ({
+  AddRoleError,
+  addRole: (input: unknown) => addRole(input),
+  markAddUnsent: (...args: unknown[]) => markAddUnsent(...args),
+}));
+
 const {
+  addRoleAction,
   changeJobStatusAction,
   markAppliedAction,
   removeJobAction,
@@ -378,5 +394,94 @@ describe("saveKitAnswerAction", () => {
         fieldErrors: {},
       },
     });
+  });
+});
+
+describe("addRoleAction", () => {
+  const POSTING = "Senior Frontend Engineer at Lattice Works. ".repeat(6);
+
+  beforeEach(() => {
+    addRole.mockClear();
+    markAddUnsent.mockClear();
+    refresh.mockClear();
+  });
+
+  it("saves the link and the trimmed text, then sends the event", async () => {
+    expect(
+      await addRoleAction({
+        url: " https://jobs.ashbyhq.com/lattice/1a2b ",
+        text: ` ${POSTING} `,
+      }),
+    ).toEqual({ ok: true, addedRoleId: ADDED_ROLE_ID });
+    expect(addRole).toHaveBeenCalledWith({
+      url: "https://jobs.ashbyhq.com/lattice/1a2b",
+      text: POSTING.trim(),
+    });
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "role/add.requested",
+        data: { addedRoleId: ADDED_ROLE_ID },
+      }),
+    );
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("asks for the text of a LinkedIn posting, and adds nothing", async () => {
+    const result = await addRoleAction({
+      url: "https://www.linkedin.com/jobs/view/4012345678",
+      text: "",
+    });
+    expect(result).toEqual({
+      ok: false,
+      errors: {
+        formErrors: [],
+        fieldErrors: {
+          text: [
+            "linkedin.com doesn't allow apps to read its pages. Paste the posting's text here.",
+          ],
+        },
+      },
+    });
+    expect(addRole).not.toHaveBeenCalled();
+  });
+
+  it("asks for a whole web link", async () => {
+    const result = await addRoleAction({ url: "lattice jobs", text: "" });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.fieldErrors.url?.[0]).toMatch(/whole link/);
+  });
+
+  it("marks it failed when the event can't be sent", async () => {
+    send.mockRejectedValueOnce(new Error("ECONNREFUSED"));
+    const result = await addRoleAction({
+      url: "https://jobs.ashbyhq.com/lattice/1a2b",
+      text: "",
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.errors.formErrors[0]).toMatch(/Inngest server/);
+    expect(markAddUnsent).toHaveBeenCalledWith(
+      ADDED_ROLE_ID,
+      expect.stringMatching(/Inngest server/),
+    );
+  });
+
+  it("says why it can't add the role", async () => {
+    addRole.mockRejectedValueOnce(
+      new AddRoleError("That role is being added already."),
+    );
+    const result = await addRoleAction({
+      url: "https://jobs.ashbyhq.com/lattice/1a2b",
+      text: "",
+    });
+    expect(result).toEqual({
+      ok: false,
+      errors: {
+        formErrors: ["That role is being added already."],
+        fieldErrors: {},
+      },
+    });
+    expect(send).not.toHaveBeenCalled();
   });
 });

@@ -12,7 +12,7 @@ import {
   sql,
 } from "drizzle-orm";
 
-import { builtCv, file, job, jobEmail } from "@/db/schema";
+import { addedRole, builtCv, file, job, jobEmail } from "@/db/schema";
 import { DEFAULT_APPLICATIONS_PARAMS } from "@/lib/applications/params";
 import { buildApplicationsQuery } from "@/lib/applications/query";
 import { unseenSince } from "@/lib/jobs/new-roles";
@@ -28,6 +28,7 @@ import { shortlistedToday } from "@/lib/pipeline/autopilot";
 import { checkSearchBlock } from "@/lib/pipeline/runs";
 import { readSettings } from "@/lib/pipeline/settings";
 import { readOwnerTimeZone } from "@/lib/pipeline/setup";
+import { ADDED_ROLE_STALE_MS } from "@/lib/schemas/added-role";
 import { READING_STALE_MS } from "@/lib/schemas/mail";
 
 import { db } from "./db";
@@ -91,11 +92,11 @@ export async function getTopBar(now = new Date()): Promise<TopBarView> {
 
 /**
  * Claude's work besides searches: kits being made, CVs being built, and
- * emails and uploaded CVs being read.
+ * emails, uploaded CVs and added roles being read.
  */
 async function readWork(now: Date) {
   const since = (ms: number) => new Date(now.getTime() - ms);
-  const [kits, cvs, [emails], [uploads]] = await Promise.all([
+  const [kits, cvs, [emails], [uploads], [added]] = await Promise.all([
     db
       .select({ tailoring: job.tailoring })
       .from(job)
@@ -122,10 +123,19 @@ async function readWork(now: Date) {
           gt(file.createdAt, since(CV_READ_MS)),
         ),
       ),
+    db
+      .select({ count: count() })
+      .from(addedRole)
+      .where(
+        and(
+          eq(addedRole.status, "reading"),
+          gt(addedRole.createdAt, since(ADDED_ROLE_STALE_MS)),
+        ),
+      ),
   ]);
   return {
     kits: kits.flatMap((row) => (row.tailoring ? [row.tailoring] : [])),
     cvs,
-    reads: (emails?.count ?? 0) + (uploads?.count ?? 0),
+    reads: (emails?.count ?? 0) + (uploads?.count ?? 0) + (added?.count ?? 0),
   };
 }

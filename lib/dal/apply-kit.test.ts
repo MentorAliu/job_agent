@@ -70,6 +70,7 @@ function roleRow(overrides: Record<string, unknown> = {}) {
     applyUrl: null,
     status: "ready",
     score: 86,
+    addedByOwner: false,
     facts: {
       aiPolicy: AI_POLICY,
       applicationRules: ["Send a CV and a short cover letter."],

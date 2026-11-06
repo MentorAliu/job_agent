@@ -131,9 +131,10 @@ export function RunView({ runId }: { runId: string }) {
           </CardTitle>
           <CardDescription>
             First the job boards of companies that already posted a role you can
-            take are checked for new ones. Then Claude searches job boards and
-            companies&apos; own careers pages, reads each new posting, checks
-            whether you can work from where you are, and scores the matches.
+            take are checked for new ones, then the feeds of remote job boards.
+            Then Claude searches job boards and companies&apos; own careers
+            pages, reads each new posting, checks whether you can work from
+            where you are, and scores the matches.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -175,6 +176,8 @@ export function RunView({ runId }: { runId: string }) {
           <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
             <Stat label="Companies checked" value={run.stats.boards} />
             <Stat label="Their new roles" value={run.stats.boardPostings} />
+            <Stat label="Board feeds read" value={run.stats.feeds} />
+            <Stat label="Roles from feeds" value={run.stats.feedPostings} />
             <Stat label="Searches" value={run.stats.searches} />
             <Stat label="New links" value={run.stats.fresh} />
             <Stat label="Postings read" value={run.stats.read} />

@@ -29,6 +29,7 @@ const emptyKit: ApplyKit = {
     salary: { min: 60000, max: 72000, currency: "EUR", period: "year" },
     aiPolicy: null,
     applicationRules: [],
+    addedByOwner: false,
     deadline: null,
   },
   tailoring: null,
@@ -324,6 +325,17 @@ describe("the apply kit page", () => {
     expect(html).toContain("The app passed over this role.");
     expect(html).toContain("Prepare kit");
     expect(html).not.toContain("Mark as applied");
+  });
+
+  it("doesn't say the app will pick a role the owner added", () => {
+    const html = render({
+      ...emptyKit,
+      job: { ...emptyKit.job, status: "new", addedByOwner: true },
+      canTailor: false,
+    });
+    expect(html).toContain("You added this role");
+    expect(html).not.toContain("waiting for a free kit");
+    expect(html).toContain("Prepare kit");
   });
 
   it("shows the role's match, place and pay at the top", () => {

@@ -70,7 +70,7 @@ async function save(page: Page, label: string) {
   await expect(page.getByText(/^Saved at/)).toBeVisible();
 }
 
-test("from sign-in through setup and a search to an automatic kit, an edited CV, Mark as applied, a pasted email and a built CV", async ({
+test("from sign-in through setup and a search to an automatic kit, an edited CV, Mark as applied, a pasted email, a built CV and an added role", async ({
   page,
 }) => {
   await test.step("create the account with the setup code, which opens setup", async () => {
@@ -392,6 +392,43 @@ test("from sign-in through setup and a search to an automatic kit, an edited CV,
         exact: true,
       }),
     ).toHaveCount(2);
+  });
+
+  await test.step("add a role by hand: Claude reads the pasted posting and finds the role it already is", async () => {
+    await open(page, "/jobs");
+    await page.getByRole("button", { name: "Add a role" }).click();
+    const dialog = page.getByRole("dialog", { name: "Add a role" });
+    // LinkedIn's terms forbid apps to read its pages, so it asks for the text.
+    await dialog
+      .getByLabel("Link to the posting")
+      .fill("https://www.linkedin.com/jobs/view/4012345678");
+    await dialog.getByRole("button", { name: "Add role" }).click();
+    await expect(
+      dialog.getByText(
+        "linkedin.com doesn't allow apps to read its pages. Paste the posting's text here.",
+      ),
+    ).toBeVisible();
+    await dialog
+      .getByLabel("The posting's text (optional)")
+      .fill(
+        [
+          "Senior Frontend Engineer (React) at Northwind Labs",
+          "Fully remote within Europe.",
+          "You build our customer app in React and TypeScript, own the design system and mentor two engineers.",
+          "You have five years of frontend work, and you care about accessibility and fast pages.",
+        ].join("\n"),
+      );
+    await dialog.getByRole("button", { name: "Add role" }).click();
+    await expect(dialog).toBeHidden();
+
+    // The recorded reading is the posting the search found, so it's that role.
+    const added = page.getByRole("region", { name: "Roles you added" });
+    await expect(added).toContainText("It was already in your roles.", {
+      timeout: 2 * 60_000,
+    });
+    await expect(
+      added.getByRole("link", { name: /Senior Frontend Engineer \(React\)/ }),
+    ).toBeVisible();
   });
 
   await test.step("Settings has the time zone setup saved, and changes it", async () => {

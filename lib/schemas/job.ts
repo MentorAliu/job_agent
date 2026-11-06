@@ -246,6 +246,10 @@ export type RunStats = {
   boards: number;
   /** New postings on those boards this run reads. */
   boardPostings: number;
+  /** Remote job boards whose own feeds were read (see lib/jobs/feeds.ts). */
+  feeds: number;
+  /** New postings from those feeds this run reads. */
+  feedPostings: number;
   /** Web searches made. */
   searches: number;
   /** Posting links in the search results. */
@@ -253,7 +257,7 @@ export type RunStats = {
   /** Links not seen in an earlier run. */
   fresh: number;
   /**
-   * Postings this run reads, from the boards and the searches: at most
+   * Postings this run reads, from the boards, the feeds and the searches: at most
    * MAX_POSTINGS_PER_RUN, and fewer once there are enough matches to score.
    */
   toRead: number;
@@ -273,6 +277,8 @@ export type RunStats = {
 export const RUN_COUNTERS = [
   "boards",
   "boardPostings",
+  "feeds",
+  "feedPostings",
   "searches",
   "found",
   "fresh",
@@ -290,6 +296,8 @@ export function emptyRunStats(stage: RunStage = "queued"): RunStats {
     stage,
     boards: 0,
     boardPostings: 0,
+    feeds: 0,
+    feedPostings: 0,
     searches: 0,
     found: 0,
     fresh: 0,

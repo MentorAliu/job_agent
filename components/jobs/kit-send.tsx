@@ -21,7 +21,7 @@ import { answerProgress, answersText } from "@/lib/jobs/kit-steps";
 import { cn } from "@/lib/utils";
 
 import { documentList } from "./event-labels";
-import { DOCUMENT_LABELS } from "./labels";
+import { DOCUMENT_LABELS, outboundRel } from "./labels";
 import { LocalDate } from "./local-date";
 
 // The apply kit's side panel: what's in the kit, with a download or a copy
@@ -202,7 +202,7 @@ export function SendPanel({
         <a
           href={applyUrl(kit)}
           target="_blank"
-          rel="noreferrer"
+          rel={outboundRel(applyUrl(kit))}
           className={cn(buttonVariants({ variant: "outline" }), "w-full")}
         >
           Open the application
@@ -296,7 +296,7 @@ export function PhoneApplyBar({
         <a
           href={applyUrl(kit)}
           target="_blank"
-          rel="noreferrer"
+          rel={outboundRel(applyUrl(kit))}
           className={cn(buttonVariants({ variant: "outline" }), "h-11")}
         >
           Open application

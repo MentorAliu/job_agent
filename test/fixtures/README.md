@@ -64,6 +64,16 @@ real SDK with `test/fake-anthropic.ts`.
   searches. It was written by hand from the documented events, not
   recorded, since no real ChatGPT sign-in was available.
 
+- `feeds/remoteok.json`, `feeds/weworkremotely-front-end.rss`,
+  `feeds/jobicy.json` and `feeds/himalayas-search.json`: the four job
+  boards' feeds a search reads, with no Claude call. Their shapes and field
+  names come from the boards' real answers on 2026-11-05; the companies,
+  postings and links are made up. Remote OK's first item is its legal
+  notice, and one of its descriptions has text whose UTF-8 was read as
+  Latin-1, as its API sends it. Between them the feeds hold postings the
+  app must leave out: ones not open to the owner's country, ones that
+  aren't developer roles, and ones older than 21 days.
+
 - `openai/discover-response.json`: a Responses API response for a discover
   task on GPT-6 Luna: a reasoning item, two searches and one opened page,
   then the structured answer. `tool_usage` bills the two searches only.

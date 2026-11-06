@@ -71,7 +71,7 @@ export function claudeWorking(
     kits: TailorState[];
     /** Built CVs not marked ready or failed. */
     cvs: { status: BuiltCvStatus; createdAt: Date }[];
-    /** Emails and uploaded CVs being read, within their time limits. */
+    /** Emails, uploaded CVs and added roles being read, within their time limits. */
     reads: number;
   },
   now: Date,

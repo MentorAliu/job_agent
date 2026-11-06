@@ -40,6 +40,8 @@ import {
   formatDay,
   formatSalary,
   formatWhere,
+  outboundRel,
+  postingLinkLabel,
 } from "./labels";
 import { CompanyTile } from "./company-tile";
 import { RemoveRole } from "./remove-role";
@@ -212,10 +214,10 @@ function KitHeader({ job }: { job: ApplyKit["job"] }) {
           <a
             href={job.url}
             target="_blank"
-            rel="noreferrer"
+            rel={outboundRel(job.url)}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
-            Posting
+            {postingLinkLabel(job.url)}
             <ExternalLinkIcon aria-hidden data-icon="inline-end" />
             <span className="sr-only">(opens in a new tab)</span>
           </a>
@@ -308,6 +310,18 @@ function TailoringStatus({
   );
 }
 
+/** Why a role has no kit, and what Prepare kit costs. */
+function prepareCopy(job: ApplyKit["job"]): string | null {
+  // The app never picks a role the owner added; it tried when it was added.
+  if (job.status === "new" && job.addedByOwner) {
+    return "You added this role, and its kit couldn't start then. Prepare it when you're ready; it costs about 5 cents.";
+  }
+  const copy = PREPARE_COPY[job.status];
+  return copy
+    ? `${copy} Prepare a kit if you want to send it anyway; it costs about 5 cents.`
+    : null;
+}
+
 const PREPARE_COPY: Partial<Record<ApplyKit["job"]["status"], string>> = {
   new: `This role is waiting for a free kit: the app writes up to ${AUTO_KITS_PER_DAY} a day.`,
   skipped: "The app passed over this role.",
@@ -320,14 +334,11 @@ const PREPARE_COPY: Partial<Record<ApplyKit["job"]["status"], string>> = {
  */
 function NotPicked({ job }: { job: ApplyKit["job"] }) {
   const setStatus = useSetStatus();
-  const copy = PREPARE_COPY[job.status];
+  const copy = prepareCopy(job);
   if (!copy) return null;
   return (
     <div className="flex flex-col items-start gap-3 rounded-xl border border-dashed p-5 text-sm text-muted-foreground">
-      <p>
-        {copy} Prepare a kit if you want to send it anyway; it costs about 5
-        cents.
-      </p>
+      <p>{copy}</p>
       <Button size="sm" onClick={() => setStatus(job, "shortlisted")}>
         <SparklesIcon aria-hidden data-icon="inline-start" />
         Prepare kit

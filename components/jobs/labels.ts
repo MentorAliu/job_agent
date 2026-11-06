@@ -1,4 +1,5 @@
 import type { SalaryView } from "@/lib/dal/jobs";
+import { feedBoardName } from "@/lib/jobs/feed-boards";
 import type { JobFacts } from "@/lib/schemas/job";
 import type { DocumentKind } from "@/lib/schemas/tailor";
 import type { JobStatus } from "@/lib/schemas/tracker";
@@ -164,6 +165,21 @@ export function matchLabel(score: number): string {
   if (score >= 80) return "Strong match";
   if (score >= 50) return "Partial match";
   return "Weak match";
+}
+
+/**
+ * How a link to a posting or an application opens. The job boards whose
+ * feeds the app reads ask for traffic back, so their links keep the
+ * referrer; other links don't send it.
+ */
+export function outboundRel(url: string): string {
+  return feedBoardName(url) ? "noopener" : "noreferrer";
+}
+
+/** "Posting", or "Posting on Remote OK" for a role from a board's feed. */
+export function postingLinkLabel(url: string): string {
+  const board = feedBoardName(url);
+  return board ? `Posting on ${board}` : "Posting";
 }
 
 /** The site a posting is on, such as "greenhouse.io". */

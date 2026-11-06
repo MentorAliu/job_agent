@@ -1,0 +1,88 @@
+[
+ {
+  "last_updated": 1793865607,
+  "legal": "API Terms of Service: Please link back (with follow, and without nofollow!) to the URL on Remote OK and mention Remote OK as a source, so we get traffic back from your site. If you do not we'll have to suspend API access.\n\nPlease don't use the Remote OK logo without written permission as it's a registered trademark, please DO use our name Remote OK though."
+ },
+ {
+  "slug": "remote-senior-frontend-engineer-tern-health-1137601",
+  "id": "1137601",
+  "epoch": 1793804949,
+  "date": "2026-11-04T15:09:09+00:00",
+  "company": "Tern Health",
+  "company_logo": "",
+  "position": "Senior Frontend Engineer",
+  "tags": [
+   "front end",
+   "react",
+   "typescript"
+  ],
+  "description": "<p>Tern Health makes scheduling software for clinics.</p><h2>What you&#39;ll do</h2><ul><li>Build our patient app in React and TypeScript</li><li>Own the design system</li></ul><p>Remote within Europe \u00e2\u0080\u0093 we\u00e2\u0080\u0099re fully distributed. Gr\u00c3\u00bc\u00c3\u009fe aus Berlin.</p>",
+  "location": "Europe",
+  "salary_min": 80000,
+  "salary_max": 100000,
+  "apply_url": "https://remoteOK.com/remote-jobs/remote-senior-frontend-engineer-tern-health-1137601",
+  "original": true,
+  "logo": "",
+  "url": "https://remoteOK.com/remote-jobs/remote-senior-frontend-engineer-tern-health-1137601"
+ },
+ {
+  "slug": "remote-frontend-engineer-ridge-pay-1137602",
+  "id": "1137602",
+  "epoch": 1793698200,
+  "date": "2026-11-03T09:30:00+00:00",
+  "company": "Ridge Pay",
+  "company_logo": "",
+  "position": "Frontend Engineer",
+  "tags": [
+   "front end"
+  ],
+  "description": "<p>Ridge Pay is hiring in the United States.</p>",
+  "location": "Remote - US",
+  "salary_min": 0,
+  "salary_max": 0,
+  "apply_url": "https://remoteOK.com/remote-jobs/remote-frontend-engineer-ridge-pay-1137602",
+  "original": true,
+  "logo": "",
+  "url": "https://remoteOK.com/remote-jobs/remote-frontend-engineer-ridge-pay-1137602"
+ },
+ {
+  "slug": "remote-product-designer-tern-health-1137603",
+  "id": "1137603",
+  "epoch": 1793620800,
+  "date": "2026-11-02T12:00:00+00:00",
+  "company": "Tern Health",
+  "company_logo": "",
+  "position": "Product Designer",
+  "tags": [
+   "design"
+  ],
+  "description": "<p>Design our patient app.</p>",
+  "location": "",
+  "salary_min": 0,
+  "salary_max": 0,
+  "apply_url": "https://remoteOK.com/remote-jobs/remote-product-designer-tern-health-1137603",
+  "original": true,
+  "logo": "",
+  "url": "https://remoteOK.com/remote-jobs/remote-product-designer-tern-health-1137603"
+ },
+ {
+  "slug": "remote-react-developer-lantern-1137604",
+  "id": "1137604",
+  "epoch": 1789898400,
+  "date": "2026-09-20T10:00:00+00:00",
+  "company": "Lantern",
+  "company_logo": "",
+  "position": "React Developer",
+  "tags": [
+   "react"
+  ],
+  "description": "<p>Anywhere in the world.</p>",
+  "location": "Worldwide",
+  "salary_min": 0,
+  "salary_max": 0,
+  "apply_url": "https://remoteOK.com/remote-jobs/remote-react-developer-lantern-1137604",
+  "original": true,
+  "logo": "",
+  "url": "https://remoteOK.com/remote-jobs/remote-react-developer-lantern-1137604"
+ }
+]

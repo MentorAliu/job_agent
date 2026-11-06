@@ -13,7 +13,7 @@ import {
   type SearchCriteria,
   type SearchScope,
 } from "@/lib/claude/discover";
-import { readPosting } from "@/lib/claude/extract";
+import { readPosting, readPostingText } from "@/lib/claude/extract";
 import { getStageSetup, llmCallRow } from "@/lib/claude/llm-call";
 import {
   getScoreBatchProgress,
@@ -43,8 +43,17 @@ import {
 } from "@/lib/jobs/canonical-url";
 import { isExcludedCompany } from "@/lib/jobs/companies";
 import { checkEligibility } from "@/lib/jobs/eligibility";
-import { checkListing } from "@/lib/jobs/listing-check";
-import { ownerClock, type OwnerClock } from "@/lib/jobs/today";
+import {
+  FEED_IDS,
+  FEEDS,
+  feedLinks,
+  fetchFeed,
+  pickFeedLinks,
+  worthReading,
+  type FeedId,
+  type FeedLink,
+} from "@/lib/jobs/feeds";
+import { ownerClock } from "@/lib/jobs/today";
 import { getEligibleRoleLinks } from "@/lib/pipeline/boards";
 import {
   getJobsToScore,
@@ -55,6 +64,12 @@ import {
   unseenLinks,
 } from "@/lib/pipeline/jobs";
 import { autoPick } from "@/lib/pipeline/autopilot";
+import {
+  getFeedListings,
+  getFeedPosting,
+  recentFeedChecks,
+  saveFeedCheck,
+} from "@/lib/pipeline/feeds";
 import { getUnsentRoles, markNotEligible } from "@/lib/pipeline/listings";
 import {
   endRun,
@@ -76,6 +91,7 @@ import {
   permanentOrRetry,
 } from "./errors";
 import { searchRunRequested, tailorRequested } from "./events";
+import { httpUrl, postedOnFor } from "./postings";
 
 /**
  * Discover calls per run (step 2): one for each group of job sites, then one
@@ -120,7 +136,8 @@ export type SearchOutcome = {
  * score. Each stage is its own Inngest step, so each is retried on its own
  * and no request has to outlast a function time limit. Before the searches,
  * the job boards of companies with a role the owner can take are checked
- * for new postings, and those are read first.
+ * for new postings, and those are read first; then the remote job boards'
+ * own feeds, whose postings are read next.
  */
 export async function runSearch(
   runId: string,
@@ -143,20 +160,32 @@ export async function runSearch(
   const boards = await step.run("check-boards", () =>
     boardsStep(runId, preferences),
   );
+  // The remote job boards' own feeds. Plain HTTP too.
+  const feeds = await step.run("check-feeds", () =>
+    feedsStep(runId, preferences),
+  );
 
-  // Steps 2 and 3: search each group of job sites, then the rest of the
-  // web for employers' own careers pages, keeping the new links.
+  // Steps 2 and 3: search each group of job sites, leaving out the boards
+  // whose feeds were just read, then the rest of the web for employers' own
+  // careers pages, keeping the new links.
   const scopes: SearchScope[] = [
-    ...start.domainGroups.map((domains): SearchScope => ({
-      kind: "sites",
-      domains,
-    })),
-    { kind: "web", except: start.domainGroups.flat() },
+    ...withoutSites(start.domainGroups, feeds.sites).map(
+      (domains): SearchScope => ({ kind: "sites", domains }),
+    ),
+    {
+      kind: "web",
+      except: [
+        ...new Set([
+          ...start.domainGroups.flat(),
+          ...FEED_IDS.map((id) => FEEDS[id].site),
+        ]),
+      ],
+    },
   ];
   const groups: PostingLink[][] = [];
   const discovered = { searches: 0, found: 0, fresh: 0 };
   for (const [index, scope] of scopes.entries()) {
-    const known = [...boards.links, ...groups.flat()].map(
+    const known = [...boards.links, ...feeds.links, ...groups.flat()].map(
       (link) => link.dedupeKey,
     );
     const id = scope.kind === "web" ? "discover-web" : `discover-${index + 1}`;
@@ -169,10 +198,12 @@ export async function runSearch(
     discovered.found += found.found;
     discovered.fresh += found.links.length;
   }
-  // The companies' boards first, since their postings are the freshest.
-  // Then one site's results, or the open web's, can't crowd out the others.
-  const toRead: (PostingLink | BoardLink)[] = [
+  // The companies' boards first, since their postings are the freshest,
+  // then the feeds', already sorted by kind and date. Then one site's
+  // results, or the open web's, can't crowd out the others.
+  const toRead: (PostingLink | BoardLink | FeedLink)[] = [
     ...boards.links,
+    ...feeds.links,
     ...interleave(groups),
   ].slice(0, MAX_POSTINGS_PER_RUN);
   await step.run("plan-reading", () =>
@@ -274,6 +305,25 @@ export function interleave<T>(groups: T[][]): T[] {
   return Array.from({ length: longest }, (_, index) =>
     groups.flatMap((group) => (index < group.length ? [group[index]] : [])),
   ).flat();
+}
+
+/**
+ * The domain groups without the given sites, as many groups as before (or
+ * fewer, when few sites are left), the sites spread evenly across them.
+ */
+export function withoutSites(groups: string[][], sites: string[]): string[][] {
+  const left = groups
+    .flat()
+    .filter(
+      (domain) =>
+        !sites.some((site) => domain === site || domain.endsWith(`.${site}`)),
+    );
+  if (left.length === groups.flat().length) return groups;
+  const count = Math.min(groups.length, left.length);
+  const size = Math.ceil(left.length / Math.max(1, count));
+  return Array.from({ length: count }, (_, index) =>
+    left.slice(index * size, (index + 1) * size),
+  ).filter((group) => group.length > 0);
 }
 
 /**
@@ -384,6 +434,48 @@ export async function boardsStep(
   return { links, boards: boards.length };
 }
 
+/**
+ * Before the searches: the remote job boards' own feeds (lib/jobs/feeds.ts),
+ * plain HTTP and no Claude call. A feed asked for in the last hour isn't
+ * asked again; what it answered then is used. Keeps the developer roles the
+ * owner wants that no run has read, up to FEED_POSTINGS_PER_RUN. A feed
+ * that can't be read is left for next time, and its board's site is
+ * searched as before. Each posting's text stays in the database, not in
+ * the step's output.
+ */
+export async function feedsStep(
+  runId: string,
+  preferences: Preferences,
+): Promise<{ links: FeedLink[]; sites: string[] }> {
+  const now = new Date();
+  const clock = ownerClock(await readOwnerTimeZone());
+  const recent = new Map(
+    (await recentFeedChecks(now)).map((check) => [check.feed, check.ok]),
+  );
+  const answered = await Promise.all(
+    FEED_IDS.map(async (id): Promise<FeedId | null> => {
+      const ok = recent.get(id);
+      if (ok !== undefined) return ok ? id : null;
+      const postings = await fetchFeed(id, preferences, clock);
+      await saveFeedCheck(
+        id,
+        postings && worthReading(postings, clock.today, preferences),
+        now,
+      );
+      return postings ? id : null;
+    }),
+  );
+  const read = answered.filter((id): id is FeedId => id !== null);
+  const links = pickFeedLinks(
+    await unseenLinks(
+      feedLinks(await getFeedListings(read), clock.today, preferences),
+    ),
+    clock.today,
+  );
+  await setRunCounts(runId, { feeds: read.length, feedPostings: links.length });
+  return { links, sites: read.map((id) => FEEDS[id].site) };
+}
+
 /** Steps 2 and 3: one discover call, then only the links not stored yet. */
 export async function discoverStep(
   runId: string,
@@ -454,34 +546,22 @@ type ReadOutcome = {
 };
 
 /**
- * The day a posting went up, best source first: the company's board it was
- * found on, then the employer's tracking system or the page's own data
- * (plain HTTP, no Claude call), then what the page says.
+ * Steps 4 and 5: read one posting, check eligibility, store it. A posting
+ * from a feed is read from the feed's text, and is applied for where the
+ * board's terms ask.
  */
-async function postedOnFor(
-  link: PostingLink | BoardLink,
-  applyUrl: string | null,
-  pageText: string | null,
-  quoted: string | null,
-  clock: OwnerClock,
-): Promise<string | null> {
-  if ("postedOn" in link && link.postedOn) return link.postedOn;
-  const check = await checkListing(
-    { canonicalUrl: link.canonicalUrl, applyUrl, description: pageText },
-    { clock },
-  );
-  return check.postedOn ?? quoted;
-}
-
-/** Steps 4 and 5: read one posting, check eligibility, store it. */
 export async function readStep(
   runId: string,
-  link: PostingLink | BoardLink,
+  link: PostingLink | BoardLink | FeedLink,
   preferences: Preferences,
 ): Promise<ReadOutcome> {
   try {
     const clock = ownerClock(await readOwnerTimeZone());
-    const result = await readPosting(link.canonicalUrl, runId, clock);
+    const fromFeed =
+      "feed" in link ? await getFeedPosting(link.dedupeKey) : null;
+    const result = fromFeed
+      ? await readPostingText(link.canonicalUrl, fromFeed.text, runId, clock)
+      : await readPosting(link.canonicalUrl, runId, clock);
     if (result.kind === "skipped") {
       await recordSeenLink(link, result.reason, runId, {
         mayPass: !result.final,
@@ -494,7 +574,7 @@ export async function readStep(
     const verdict = checkEligibility(facts, preferences, pageText ?? undefined);
     const company = facts.company.trim() || new URL(link.canonicalUrl).hostname;
     const excluded = isExcludedCompany(company, preferences.excludedCompanies);
-    const applyUrl = httpUrl(facts.applyUrl);
+    const applyUrl = fromFeed?.applyUrl ?? httpUrl(facts.applyUrl);
     const saved = await insertJob({
       canonicalUrl: link.canonicalUrl,
       dedupeKey: link.dedupeKey,
@@ -564,17 +644,6 @@ export async function readStep(
       return { outcome: "skipped", reason: apiErrorMessage(error) };
     }
     throw permanentOrRetry(error);
-  }
-}
-
-function httpUrl(value: string): string | null {
-  try {
-    const url = new URL(value.trim());
-    return url.protocol === "https:" || url.protocol === "http:"
-      ? url.toString()
-      : null;
-  } catch {
-    return null;
   }
 }
 

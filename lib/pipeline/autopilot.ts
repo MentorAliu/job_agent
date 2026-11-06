@@ -80,6 +80,9 @@ export async function autoPick(now = new Date()): Promise<AutoPickResult> {
             eq(job.status, "new"),
             isNotNull(job.score),
             inArray(job.eligibility, ["eligible", "unclear"]),
+            // A role the owner added is theirs to pick; the app never
+            // passes it over.
+            eq(job.addedByOwner, false),
           ),
         ),
       shortlistedToday(timeZone, now),

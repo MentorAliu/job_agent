@@ -7,7 +7,12 @@ import { redirect } from "next/navigation";
 
 import { useOnEmailsRead } from "@/components/emails/role-emails";
 import { CompanyTile } from "@/components/jobs/company-tile";
-import { formatSalary, formatWhere } from "@/components/jobs/labels";
+import {
+  formatSalary,
+  formatWhere,
+  outboundRel,
+  postingLinkLabel,
+} from "@/components/jobs/labels";
 import { LocalDate } from "@/components/jobs/local-date";
 import { StatusMenu } from "@/components/jobs/status-menu";
 import { buttonVariants } from "@/components/ui/button";
@@ -137,10 +142,10 @@ function ApplicationHeader({ job }: { job: JobDetail }) {
           <a
             href={job.url}
             target="_blank"
-            rel="noreferrer"
+            rel={outboundRel(job.url)}
             className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
           >
-            Posting
+            {postingLinkLabel(job.url)}
             <ExternalLinkIcon aria-hidden data-icon="inline-end" />
             <span className="sr-only">(opens in a new tab)</span>
           </a>

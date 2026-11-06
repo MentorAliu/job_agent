@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 
+import { AddRole } from "@/components/jobs/add-role";
+import { AddedRoles } from "@/components/jobs/added-roles";
 import { MarkRolesSeen } from "@/components/jobs/mark-roles-seen";
 import { RolesList } from "@/components/jobs/roles-list";
 import { PageHeader } from "@/components/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getRecentAddedRoles } from "@/lib/dal/added-roles";
 import { listJobs } from "@/lib/dal/jobs";
 import { readRolesSeen } from "@/lib/dal/roles-seen";
 import { requireUser } from "@/lib/dal/session";
@@ -22,7 +25,8 @@ export default function RolesPage({ searchParams }: PageProps<"/jobs">) {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Roles"
-        description="Every role the searches found. The app picks the strong ones and writes their kits; open a role to send it. Once you apply, the role moves to Applications."
+        description="Every role the searches found, and any you add. The app picks the strong ones and writes their kits; open a role to send it. Once you apply, the role moves to Applications."
+        actions={<AddRole />}
       />
       <Suspense fallback={<RolesSkeleton />}>
         <RolesLoader searchParams={searchParams} />
@@ -54,11 +58,13 @@ async function RolesLoader({
   await requireUser();
   const view = loadRolesParams(await searchParams);
   const since = newSince(await readRolesSeen(), new Date());
-  const page = await listJobs(rolesListParams(view, since), {
-    newSince: since,
-  });
+  const [page, added] = await Promise.all([
+    listJobs(rolesListParams(view, since), { newSince: since }),
+    getRecentAddedRoles(),
+  ]);
   return (
     <>
+      <AddedRoles roles={added} />
       <RolesList view={view} page={page} newSince={since.toISOString()} />
       {/* Each view counts as a look at the page. */}
       <MarkRolesSeen key={serializeRolesParams("", view)} />

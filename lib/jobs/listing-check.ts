@@ -5,6 +5,8 @@
 // a clear sign; anything it can't read (a block, a timeout, an odd answer)
 // leaves the role as it is. Along the way it notes the day the posting went
 // up, where the system or the page says.
+import { OFF_LIMITS_JOB_SITES } from "@/lib/schemas/settings";
+
 import {
   ATS_NAMES,
   boardApiUrl,
@@ -72,7 +74,9 @@ type Probe =
 
 /**
  * How to ask whether the posting at `url` is open, or null for a link that
- * mustn't be fetched: not http(s), or not a public host.
+ * mustn't be fetched: not http(s), not a public host, or on a job site whose
+ * terms forbid apps to read its pages, such as a role the owner added from
+ * LinkedIn.
  */
 export function probeFor(url: string): Probe | null {
   let parsed: URL;
@@ -82,6 +86,14 @@ export function probeFor(url: string): Probe | null {
     return null;
   }
   if (!isPublicUrl(parsed)) return null;
+  const host = parsed.hostname.toLowerCase();
+  if (
+    OFF_LIMITS_JOB_SITES.some(
+      (site) => host === site || host.endsWith(`.${site}`),
+    )
+  ) {
+    return null;
+  }
   return atsProbe(parsed) ?? { kind: "page", url: parsed.toString() };
 }
 

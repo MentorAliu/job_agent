@@ -1,0 +1,75 @@
+{
+ "comments": "Search results come 20 to a page. Pass ?page=2, ?page=3 and so on for more; there is no cursor on search. Cursor pagination (nextCursor) is only on /jobs/api, the browse feed. 13/03/2026: The API has been updated to include the companySlug field in the response.",
+ "updatedAt": 1793869972,
+ "offset": 0,
+ "limit": 20,
+ "totalCount": 2,
+ "jobs": [
+  {
+   "title": "Senior Frontend Engineer",
+   "excerpt": "Kite Analytics builds dashboards for energy grids.",
+   "companyName": "Kite Analytics",
+   "companySlug": "kite-analytics",
+   "companyLogo": "",
+   "employmentType": "Full Time",
+   "minSalary": 4000,
+   "maxSalary": 5500,
+   "salaryPeriod": "monthly",
+   "seniority": [
+    "Senior"
+   ],
+   "currency": "EUR",
+   "locationRestrictions": [
+    "Montenegro",
+    "Albania",
+    "North Macedonia"
+   ],
+   "timezoneRestrictions": [
+    1,
+    2
+   ],
+   "categories": [
+    "Frontend-Engineer",
+    "React-Developer"
+   ],
+   "parentCategories": [
+    "Software Engineering"
+   ],
+   "description": "<p>Kite Analytics builds dashboards for energy grids.</p><ul><li>React and TypeScript</li></ul>",
+   "pubDate": 1793869972,
+   "expiryDate": 1796461972,
+   "applicationLink": "https://himalayas.app/companies/kite-analytics/jobs/senior-frontend-engineer?utm_source=api",
+   "guid": "https://himalayas.app/companies/kite-analytics/jobs/senior-frontend-engineer"
+  },
+  {
+   "title": "Front-End Developer",
+   "excerpt": "Work from anywhere.",
+   "companyName": "Orchard Labs",
+   "companySlug": "orchard-labs",
+   "companyLogo": "",
+   "employmentType": "Contractor",
+   "minSalary": null,
+   "maxSalary": null,
+   "seniority": [
+    "Mid-level"
+   ],
+   "currency": "USD",
+   "locationRestrictions": [],
+   "timezoneRestrictions": [
+    5.5,
+    -3
+   ],
+   "categories": [
+    "Front-End-Developer"
+   ],
+   "parentCategories": [
+    "Software Engineering"
+   ],
+   "description": "<p>Work from anywhere.</p>",
+   "pubDate": 1793815200,
+   "expiryDate": 1796407200,
+   "applicationLink": "https://himalayas.app/companies/orchard-labs/jobs/front-end-developer?utm_source=api",
+   "guid": "https://himalayas.app/companies/orchard-labs/jobs/front-end-developer"
+  }
+ ]
+}

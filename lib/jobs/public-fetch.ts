@@ -149,7 +149,8 @@ async function get(
         continue;
       }
       const type = response.headers.get("content-type") ?? "";
-      const readable = /json|html|text/i.test(type) || type === "";
+      // RSS feeds come as application/rss+xml.
+      const readable = /json|html|text|xml/i.test(type) || type === "";
       const text = readable ? await readText(response) : "";
       if (!readable) await response.body?.cancel();
       return {

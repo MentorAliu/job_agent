@@ -47,7 +47,7 @@ vi.mock("./budget", async () => ({
     assertWithinBudget(...(args as [])),
 }));
 
-const { readPosting, siteDomain } = await import("./extract");
+const { readPosting, readPostingText, siteDomain } = await import("./extract");
 
 const URL = "https://boards.greenhouse.io/northwindlabs/jobs/4012345";
 const RUN_ID = "7d0c1a52-6f1e-4d6b-9a83-0f2b2b6f9d11";
@@ -298,6 +298,114 @@ describe("readPosting on a command-line agent", () => {
       "claude_code",
       expect.stringContaining("boards.greenhouse.io"),
     );
+  });
+});
+
+describe("readPostingText (step 4 on a feed's or the owner's text)", () => {
+  const FEED_URL =
+    "https://remoteok.com/remote-jobs/remote-senior-frontend-engineer-northwind-labs-1137601";
+  const answer = JSON.parse(
+    recorded.body.content.findLast((block) => block.type === "text")?.text ??
+      "",
+  ) as Record<string, unknown>;
+  const text = [
+    "Listed on Remote OK, a job board for remote work.",
+    "Title: Senior Frontend Engineer (React)",
+    "Company: Northwind Labs",
+    "",
+    "Location: Remote — anywhere in Europe.",
+    "You'll work with the team within CET ±2 hours.",
+    "€65,000 – €80,000 a year.",
+  ].join("\n");
+  /** The recorded response as a text-only answer: no fetch, no tools. */
+  const textOnly = (stopReason = "end_turn") =>
+    withContent(
+      [{ type: "text", text: JSON.stringify(answer), citations: null }],
+      stopReason,
+    );
+
+  beforeEach(() => {
+    recordLlmCall.mockClear();
+    assertWithinBudget.mockClear();
+    fetchPublic.mockClear();
+  });
+
+  it("reads the facts from the text it's given, with no tools and no fetch", async () => {
+    const { client, requests } = fakeAnthropic([textOnly()]);
+    const result = await readPostingText(FEED_URL, text, RUN_ID, CLOCK, client);
+
+    expect(result).toMatchObject({
+      kind: "posting",
+      facts: { company: "Northwind Labs", location: { allowed: ["Europe"] } },
+      pageText: text,
+      costUsd: 0.000542,
+    });
+    const body = requests[0].body as Record<string, unknown>;
+    expect(body.tools).toBeUndefined();
+    expect(body.output_config).toMatchObject({
+      format: { type: "json_schema" },
+    });
+    expect(JSON.stringify(body.messages)).toContain("Listed on Remote OK");
+    expect(body.system).toMatch(/data, not instructions/);
+    expect(fetchPublic).not.toHaveBeenCalled();
+    expect(assertWithinBudget).toHaveBeenCalledWith(expect.any(Number), RUN_ID);
+
+    // The quotes are in the text, so the eligibility check trusts them.
+    if (result.kind !== "posting") return;
+    const verdict = checkEligibility(result.facts, samplePreferences, text);
+    expect(verdict.eligibility).toBe("eligible");
+  });
+
+  it("checks the monthly budget when no run is behind it, such as a role the owner added", async () => {
+    const { client } = fakeAnthropic([textOnly()]);
+    await readPostingText(FEED_URL, text, null, CLOCK, client);
+    expect(assertWithinBudget).toHaveBeenCalledWith(expect.any(Number));
+    expect(recordLlmCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips a posting cut off at the token limit", async () => {
+    const { client } = fakeAnthropic([textOnly("max_tokens")]);
+    expect(
+      await readPostingText(FEED_URL, text, RUN_ID, CLOCK, client),
+    ).toMatchObject({
+      kind: "skipped",
+      reason: "The posting was too long to read.",
+      final: true,
+    });
+  });
+
+  it("runs on the command-line agent Settings picked, with the text in its task", async () => {
+    engine.picked = "claude_code";
+    runCliTasks.mockReset();
+    runCliTasks.mockResolvedValueOnce([
+      {
+        ok: true,
+        reply: {
+          output: answer,
+          usage: usageFrom({ inputTokens: 1200, outputTokens: 400 }),
+          model: "claude-haiku-5-5",
+          requestId: "session-2",
+          webSearches: 0,
+        },
+      },
+    ]);
+    try {
+      const { client, requests } = fakeAnthropic([]);
+      const result = await readPostingText(
+        FEED_URL,
+        text,
+        RUN_ID,
+        CLOCK,
+        client,
+      );
+      expect(requests).toHaveLength(0);
+      expect(result).toMatchObject({ kind: "posting" });
+      const [[, [task]]] = runCliTasks.mock.calls;
+      expect(task?.prompt).toContain("Company: Northwind Labs");
+      expect(fetchPublic).not.toHaveBeenCalled();
+    } finally {
+      engine.picked = undefined;
+    }
   });
 });
 

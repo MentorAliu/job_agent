@@ -30,6 +30,14 @@ export const emailPasted = eventType("email/pasted", {
   schema: z.object({ emailId: z.uuid() }),
 });
 
+/**
+ * Sent by Add a role on the Roles page, after the link (and any pasted text)
+ * is saved. Reads, checks and scores the role, then makes its kit.
+ */
+export const roleAddRequested = eventType("role/add.requested", {
+  schema: z.object({ addedRoleId: z.uuid() }),
+});
+
 /** Sent by the CV builder's form, after the CV is saved as being written. */
 export const cvBuildRequested = eventType("cv/build.requested", {
   schema: z.object({ cvId: z.uuid() }),

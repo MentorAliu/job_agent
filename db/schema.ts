@@ -1,4 +1,4 @@
-// The sixteen app tables. Better Auth's tables are generated into db/auth-schema.ts.
+// The nineteen app tables. Better Auth's tables are generated into db/auth-schema.ts.
 // JSON columns are typed with `.$type<…>()` from lib/schemas/ as each phase
 // defines its schema.
 import { sql } from "drizzle-orm";
@@ -18,6 +18,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+import { ADDED_ROLE_STATUSES } from "../lib/schemas/added-role";
 import {
   BUILT_CV_STATUSES,
   type CvBuildRequest,
@@ -55,6 +56,7 @@ import {
   type TailorState,
 } from "../lib/schemas/tailor";
 import { JOB_STATUSES, type JobEvent } from "../lib/schemas/tracker";
+import type { FeedId } from "../lib/jobs/feed-boards";
 
 const createdAt = () =>
   timestamp("created_at", { withTimezone: true }).defaultNow().notNull();
@@ -103,6 +105,7 @@ export const mailOutcome = pgEnum("mail_outcome", MAIL_OUTCOMES);
 export const emailAuthor = pgEnum("email_author", EMAIL_AUTHORS);
 export const emailReadStatus = pgEnum("email_read_status", EMAIL_READ_STATUSES);
 export const builtCvStatus = pgEnum("built_cv_status", BUILT_CV_STATUSES);
+export const addedRoleStatus = pgEnum("added_role_status", ADDED_ROLE_STATUSES);
 export const fileKind = pgEnum("file_kind", ["cv_upload", "document_pdf"]);
 export const cvParseStatus = pgEnum("cv_parse_status", [
   "pending",
@@ -212,6 +215,8 @@ export const job = pgTable(
     firstRunId: uuid("first_run_id").references(() => run.id, {
       onDelete: "set null",
     }),
+    /** The owner added it by hand, from a link or a posting's text. */
+    addedByOwner: boolean("added_by_owner").notNull().default(false),
     foundAt: timestamp("found_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -246,6 +251,61 @@ export const seenLink = pgTable("seen_link", {
   }),
   createdAt: createdAt(),
 });
+
+/**
+ * A posting from a remote job board's own feed that a search may read: the
+ * board's text for it is kept here, so it never passes through Inngest's
+ * step history. Each read of a feed replaces that feed's rows.
+ */
+export const feedPosting = pgTable(
+  "feed_posting",
+  {
+    dedupeKey: text("dedupe_key").primaryKey(),
+    feed: text("feed").$type<FeedId>().notNull(),
+    canonicalUrl: text("canonical_url").notNull(),
+    /** Where to apply, as the board's terms ask. */
+    applyUrl: text("apply_url").notNull(),
+    title: text("title").notNull(),
+    company: text("company").notNull(),
+    places: jsonb("places").$type<string[]>().notNull(),
+    postedOn: date("posted_on"),
+    /** The board's facts and description, for Claude to read. */
+    text: text("text").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => [index("feed_posting_feed_idx").on(t.feed)],
+);
+
+/** When each board's feed was last asked for, so none is asked twice in an hour. */
+export const feedCheck = pgTable("feed_check", {
+  feed: text("feed").$type<FeedId>().primaryKey(),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+  /** The feed answered, so its rows in `feed_posting` are current. */
+  ok: boolean("ok").notNull(),
+});
+
+/**
+ * A role the owner added by hand: the link and any text they pasted, until
+ * an Inngest step reads it, and then what came of it.
+ */
+export const addedRole = pgTable(
+  "added_role",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    url: text("url").notNull(),
+    /** The posting's text as pasted. Empty when only the link was given. */
+    text: text("text").notNull().default(""),
+    status: addedRoleStatus("status").notNull().default("reading"),
+    /** What came of it, or why it failed, in words the page shows. */
+    note: text("note"),
+    jobId: uuid("job_id").references(() => job.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("added_role_created_at_idx").on(t.createdAt)],
+);
 
 /** A tailored CV, cover letter or set of answers. */
 export const document = pgTable(

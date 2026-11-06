@@ -104,6 +104,8 @@ export type ApplyKit = {
     aiPolicy: string | null;
     applicationRules: string[];
     deadline: string | null;
+    /** The owner added it on the Roles page, so the app never picks it. */
+    addedByOwner: boolean;
   };
   /** The latest request. A lost one reads as failed. */
   tailoring: TailorState | null;
@@ -187,6 +189,7 @@ export async function getApplyKit(jobId: string): Promise<ApplyKit | null> {
       applyUrl: job.applyUrl,
       status: job.status,
       score: job.score,
+      addedByOwner: job.addedByOwner,
       facts: job.facts,
       description: job.descriptionMd,
       followUpOn: job.followUpOn,
@@ -287,6 +290,7 @@ export async function getApplyKit(jobId: string): Promise<ApplyKit | null> {
       aiPolicy: row.facts?.aiPolicy || null,
       applicationRules: row.facts?.applicationRules ?? [],
       deadline: row.facts?.deadline || null,
+      addedByOwner: row.addedByOwner ?? false,
     },
     tailoring: shownState(row.tailoring),
     canTailor: (TAILORABLE_STATUSES as readonly JobStatus[]).includes(

@@ -121,6 +121,8 @@ export type JobDetail = JobListRow & {
   description: string | null;
   notes: string;
   firstRunId: string | null;
+  /** The owner added it by hand, rather than a search finding it. */
+  addedByOwner: boolean;
   /** Newest first. */
   events: TimelineEvent[];
   /**
@@ -313,6 +315,7 @@ export async function getJobDetail(id: string): Promise<JobDetail | null> {
       description: job.descriptionMd,
       notes: job.notes,
       firstRunId: job.firstRunId,
+      addedByOwner: job.addedByOwner,
     })
     .from(job)
     .leftJoin(application, eq(application.jobId, job.id))
@@ -340,6 +343,7 @@ export async function getJobDetail(id: string): Promise<JobDetail | null> {
     description: row.description,
     notes: row.notes ?? "",
     firstRunId: row.firstRunId,
+    addedByOwner: row.addedByOwner,
     // An event this version doesn't know is left out, not shown wrong.
     events: events.flatMap((entry) => {
       const parsed = jobEventSchema.safeParse(entry);

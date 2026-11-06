@@ -5,6 +5,7 @@ import { CheckIcon, TriangleAlertIcon } from "lucide-react";
 
 import { ELIGIBILITY_LABELS } from "@/components/runs/run-labels";
 import type { JobDetail } from "@/lib/dal/jobs";
+import { feedBoardName } from "@/lib/jobs/feed-boards";
 import { postedAgo } from "@/lib/jobs/posted";
 import { jobDetailQuery } from "@/lib/jobs/queries";
 import type { Eligibility } from "@/lib/schemas/job";
@@ -247,6 +248,13 @@ function KeyFacts({ job }: { job: JobDetail }) {
   );
 }
 
+/** How the role came in: added by the owner, from a board's feed, or a search. */
+function foundTitle(job: JobDetail): string {
+  if (job.addedByOwner) return "Added by you";
+  const board = feedBoardName(job.url);
+  return board ? `Found on ${board}` : "Found by a search";
+}
+
 function Timeline({ job }: { job: JobDetail }) {
   const today = job.today;
   const entries: {
@@ -270,7 +278,7 @@ function Timeline({ job }: { job: JobDetail }) {
     {
       id: "found",
       at: job.foundAt,
-      title: "Found by a search",
+      title: foundTitle(job),
       detail: postingSite(job.url),
       dot: "bg-neutral",
     },

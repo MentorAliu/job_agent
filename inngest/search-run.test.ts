@@ -9,6 +9,7 @@ import type { SearchScope } from "@/lib/claude/discover";
 import type { JobToScore } from "@/lib/claude/score";
 import type { AtsBoard, BoardPosting } from "@/lib/jobs/ats";
 import { postingLink, type PostingLink } from "@/lib/jobs/canonical-url";
+import type { FeedId, FeedPosting } from "@/lib/jobs/feeds";
 import { addDays, dayIn } from "@/lib/jobs/today";
 import {
   emptyRunStats,
@@ -74,6 +75,17 @@ const store = {
   cliUnanswered: new Set<string>(),
   /** The plan's limit is reached, so the agent answers nothing. */
   cliAtLimit: false,
+  /** What each job board's feed answers; a feed left out can't be read. */
+  feeds: new Map<FeedId, FeedPosting[]>(),
+  /** Each time a feed was asked for, in order. */
+  feedFetches: [] as FeedId[],
+  /** The feed postings kept for reading, and when each feed was last asked. */
+  feedRows: new Map<string, FeedPosting>(),
+  feedChecks: new Map<FeedId, { at: Date; ok: boolean }>(),
+  /** The links read from a feed's text rather than fetched. */
+  textReads: [] as string[],
+  /** Each discover call's scope, in order. */
+  scopes: [] as SearchScope[],
 };
 
 /** A database write that fails the first time it touches `counts`. */
@@ -447,6 +459,45 @@ vi.mock("@/lib/jobs/boards", async () => {
   };
 });
 
+vi.mock("@/lib/jobs/feeds", async () => ({
+  ...(await vi.importActual<object>("@/lib/jobs/feeds")),
+  fetchFeed: async (id: FeedId) => {
+    store.feedFetches.push(id);
+    return store.feeds.get(id) ?? null;
+  },
+}));
+
+vi.mock("@/lib/pipeline/feeds", () => ({
+  recentFeedChecks: async (now: Date) =>
+    [...store.feedChecks]
+      .filter(([, check]) => now.getTime() - check.at.getTime() < 3_600_000)
+      .map(([feed, check]) => ({ feed, ok: check.ok })),
+  saveFeedCheck: async (
+    feed: FeedId,
+    postings: FeedPosting[] | null,
+    now: Date,
+  ) => {
+    if (postings) {
+      for (const [key, row] of store.feedRows) {
+        if (row.feed === feed) store.feedRows.delete(key);
+      }
+      for (const row of postings) {
+        const key = postingLink(row.url)?.dedupeKey;
+        if (key) store.feedRows.set(key, row);
+      }
+    }
+    store.feedChecks.set(feed, { at: now, ok: postings !== null });
+  },
+  getFeedListings: async (feeds: FeedId[]) =>
+    [...store.feedRows.values()]
+      .filter((row) => feeds.includes(row.feed))
+      .map((row) => ({ ...row, url: postingLink(row.url)!.canonicalUrl })),
+  getFeedPosting: async (dedupeKey: string) => {
+    const row = store.feedRows.get(dedupeKey);
+    return row ? { text: row.text, applyUrl: row.applyUrl } : null;
+  },
+}));
+
 vi.mock("@/lib/jobs/listing-check", () => ({
   checkListing: async (listing: { canonicalUrl: string }) => {
     const postedOn = store.listingDates.get(listing.canonicalUrl);
@@ -552,6 +603,7 @@ vi.mock("@/lib/claude/discover", async () => ({
     runId: string,
   ) => {
     await assertWithinBudget(0.035, runId);
+    store.scopes.push(scope);
     if (scope.kind === "web" && store.webError) throw store.webError;
     store.calls.push({ runId, costUsd: 0.031, stage: "discover" });
     const urls =
@@ -568,6 +620,12 @@ vi.mock("@/lib/claude/extract", () => ({
     } finally {
       store.reading--;
     }
+  },
+  // A feed's text says what its made-up page says.
+  readPostingText: async (url: string, text: string, runId: string) => {
+    if (!text) throw new Error(`No text for ${url}`);
+    store.textReads.push(url);
+    return readMadeUpPosting(url, runId);
   },
 }));
 
@@ -642,6 +700,7 @@ vi.mock("@/lib/claude/score", async () => ({
 
 const {
   runSearch,
+  withoutSites,
   ENOUGH_MATCHES,
   groupsToSearch,
   interleave,
@@ -719,6 +778,12 @@ describe("runSearch (steps 2–6)", () => {
     store.cliUnanswered.clear();
     store.cliAtLimit = false;
     store.mostReadAtOnce = 0;
+    store.feeds.clear();
+    store.feedFetches = [];
+    store.feedRows.clear();
+    store.feedChecks.clear();
+    store.textReads = [];
+    store.scopes = [];
   });
 
   it("stores at least 10 postings, each with facts, a quoted verdict and a scored match", async () => {
@@ -983,6 +1048,188 @@ describe("runSearch (steps 2–6)", () => {
         eligibility: "eligible",
         score: 82,
       });
+    });
+  });
+
+  it("reads the remote boards' feeds before searching, and leaves their sites out of the searches", async () => {
+    const react =
+      "https://remoteOK.com/remote-jobs/remote-senior-react-engineer-tern-1137601";
+    const vue =
+      "https://weworkremotely.com/remote-jobs/lattice-senior-vue-developer";
+    const usOnly =
+      "https://remoteok.com/remote-jobs/remote-frontend-engineer-ridge-1137602";
+    const feedPosting = (
+      feed: FeedId,
+      url: string,
+      title: string,
+      company: string,
+      places: string[],
+      postedOn: string | null,
+      applyUrl = url,
+    ): FeedPosting => ({
+      feed,
+      url,
+      applyUrl,
+      title,
+      company,
+      places,
+      postedOn,
+      text: `Listed on a job board for remote work.\nTitle: ${title}\nCompany: ${company}`,
+    });
+    store.feeds.set("remoteok", [
+      feedPosting(
+        "remoteok",
+        react,
+        "Senior React Engineer",
+        "Tern Health",
+        ["Europe"],
+        addDays(TODAY, -2),
+      ),
+      // Open only where the owner doesn't live, or not a developer's job.
+      feedPosting(
+        "remoteok",
+        usOnly,
+        "Frontend Engineer",
+        "Ridge Pay",
+        ["US"],
+        TODAY,
+      ),
+      feedPosting(
+        "remoteok",
+        "https://remoteok.com/remote-jobs/remote-product-designer-tern-1137603",
+        "Product Designer",
+        "Tern Health",
+        [],
+        TODAY,
+      ),
+    ]);
+    store.feeds.set("weworkremotely", [
+      feedPosting(
+        "weworkremotely",
+        vue,
+        "Senior Vue Developer",
+        "Lattice Works",
+        ["Anywhere in the World"],
+        TODAY,
+      ),
+      // Too old for a kit.
+      feedPosting(
+        "weworkremotely",
+        "https://weworkremotely.com/remote-jobs/lattice-frontend-developer",
+        "Frontend Developer",
+        "Lattice Works",
+        [],
+        addDays(TODAY, -30),
+      ),
+    ]);
+    store.feeds.set("jobicy", []);
+    const extra = {
+      [react]: posting(
+        "Tern Health",
+        "Senior React Engineer",
+        "Remote within Europe.",
+        ["Europe"],
+      ),
+      [vue]: posting(
+        "Lattice Works",
+        "Senior Vue Developer",
+        "Anywhere in the world.",
+        ["Worldwide"],
+      ),
+    };
+    await withPostings(extra, async () => {
+      const runId = newRun();
+      const { step, ids } = fakeStep();
+      expect(await runSearch(runId, step)).toEqual({ status: "succeeded" });
+
+      expect(ids.indexOf("check-feeds")).toBeGreaterThan(
+        ids.indexOf("check-boards"),
+      );
+      expect(ids.indexOf("check-feeds")).toBeLessThan(
+        ids.indexOf("discover-1"),
+      );
+      // Himalayas' feed couldn't be read, so its site is still searched.
+      expect(store.runs.get(runId)?.stats).toMatchObject({
+        feeds: 3,
+        feedPostings: 2,
+      });
+      const searched = store.scopes.flatMap((scope) =>
+        scope.kind === "sites" ? scope.domains : [],
+      );
+      expect(searched).not.toContain("remoteok.com");
+      expect(searched).not.toContain("weworkremotely.com");
+      expect(searched).toContain("himalayas.app");
+      expect(searched).toContain("greenhouse.io");
+      expect(
+        store.scopes.filter((scope) => scope.kind === "sites"),
+      ).toHaveLength(3);
+      const web = store.scopes.find((scope) => scope.kind === "web");
+      expect(web?.kind === "web" && web.except).toContain("jobicy.com");
+
+      // Read from the feeds' text, the newest first, and applied for on
+      // the board.
+      const reactUrl = postingLink(react)!.canonicalUrl;
+      expect(store.textReads).toEqual([vue, reactUrl]);
+      expect(
+        store.jobs.find((stored) => stored.canonicalUrl === reactUrl),
+      ).toMatchObject({
+        applyUrl: react,
+        postedOn: addDays(TODAY, -2),
+        eligibility: "eligible",
+        status: "new",
+        score: 82,
+      });
+      expect(store.reads.join(" ")).not.toMatch(/ridge|designer/);
+    });
+  });
+
+  it("asks each feed at most once an hour, and reads what it answered then", async () => {
+    const react =
+      "https://himalayas.app/companies/tern-health/jobs/senior-react-engineer";
+    store.feeds.set("himalayas", [
+      {
+        feed: "himalayas",
+        url: react,
+        applyUrl: `${react}?utm_source=api`,
+        title: "Senior React Engineer",
+        company: "Tern Health",
+        places: ["Montenegro", "Albania"],
+        postedOn: TODAY,
+        text: "Title: Senior React Engineer",
+      },
+    ]);
+    const extra = {
+      [react]: posting(
+        "Tern Health",
+        "Senior React Engineer",
+        "Open to candidates in Montenegro and Albania.",
+        ["Montenegro", "Albania"],
+      ),
+    };
+    await withPostings(extra, async () => {
+      // A run stopped by the budget before it read the posting.
+      store.runBudgetUsd = 0.001;
+      await runSearch(newRun(), fakeStep().step);
+      expect(store.feedFetches.sort()).toEqual([
+        "himalayas",
+        "jobicy",
+        "remoteok",
+        "weworkremotely",
+      ]);
+
+      store.runBudgetUsd = 1;
+      const runId = newRun();
+      expect(await runSearch(runId, fakeStep().step)).toEqual({
+        status: "succeeded",
+      });
+      // No feed asked again; the posting kept from the first answer is read.
+      expect(store.feedFetches).toHaveLength(4);
+      expect(store.textReads).toEqual([react]);
+      expect(
+        store.jobs.find((stored) => stored.canonicalUrl === react),
+      ).toMatchObject({ applyUrl: `${react}?utm_source=api` });
+      // Only Himalayas answered, so the other boards are searched.
+      expect(store.runs.get(runId)?.stats).toMatchObject({ feeds: 1 });
     });
   });
 
@@ -1315,6 +1562,35 @@ describe("runSearch (steps 2–6)", () => {
     expect(today).toHaveLength(MAX_SITE_GROUPS);
     expect(today.flat()).toEqual(["board1.com", "board2.com", "board3.com"]);
     expect(tomorrow.flat()[0]).toBe("board2.com");
+  });
+
+  it("spreads the sites left across the same number of searches", () => {
+    const groups = [
+      ["greenhouse.io", "lever.co", "ashbyhq.com", "workable.com"],
+      [
+        "smartrecruiters.com",
+        "recruitee.com",
+        "weworkremotely.com",
+        "remotive.com",
+      ],
+      ["remoteok.com", "himalayas.app", "workingnomads.com", "landing.jobs"],
+    ];
+    expect(withoutSites(groups, [])).toBe(groups);
+    expect(
+      withoutSites(groups, [
+        "remoteok.com",
+        "weworkremotely.com",
+        "himalayas.app",
+      ]),
+    ).toEqual([
+      ["greenhouse.io", "lever.co", "ashbyhq.com"],
+      ["workable.com", "smartrecruiters.com", "recruitee.com"],
+      ["remotive.com", "workingnomads.com", "landing.jobs"],
+    ]);
+    expect(
+      withoutSites([["remoteok.com"], ["lever.co"]], ["remoteok.com"]),
+    ).toEqual([["lever.co"]]);
+    expect(withoutSites([["remoteok.com"]], ["remoteok.com"])).toEqual([]);
   });
 
   it("tries a page that couldn't be fetched once more, in the next run", async () => {

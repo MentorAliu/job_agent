@@ -1,0 +1,78 @@
+{
+ "apiVersion": "2.2.19",
+ "documentationUrl": "https://jobi.cy/apidocs",
+ "friendlyNotice": "Thanks for using Jobicy API! Please ensure Jobicy is clearly credited with a direct link to the source, and all application buttons redirect to the original job URL provided in this feed. That’s all! You might be building something amazing, we wish you the best of luck!",
+ "jobCount": 3,
+ "lastUpdate": "2026-11-05T14:05:23+00:00",
+ "nextCursor": "AgAAAAB",
+ "hasMore": false,
+ "appliedFilters": {
+  "count": 100,
+  "industry": "engineering"
+ },
+ "jobs": [
+  {
+   "id": 159201,
+   "url": "https://jobicy.com/jobs/159201-senior-react-developer",
+   "jobSlug": "159201-senior-react-developer",
+   "jobTitle": "Senior React Developer",
+   "companyName": "Harbor & Pine",
+   "companyLogo": "https://jobicy.com/data/logo.png",
+   "jobIndustry": [
+    "Software Engineering"
+   ],
+   "jobType": [
+    "Full-Time"
+   ],
+   "jobGeo": "EMEA",
+   "jobLevel": "Senior",
+   "jobExcerpt": "Harbor & Pine builds booking tools for hotels.",
+   "jobDescription": "<p>Harbor &amp; Pine builds booking tools for hotels.</p><p>You work from anywhere in EMEA.</p>",
+   "pubDate": "2026-11-05T14:05:23+00:00",
+   "salaryMin": 60000,
+   "salaryMax": 80000,
+   "salaryCurrency": "EUR",
+   "salaryPeriod": "yearly"
+  },
+  {
+   "id": 159202,
+   "url": "https://jobicy.com/jobs/159202-frontend-engineer",
+   "jobSlug": "159202-frontend-engineer",
+   "jobTitle": "Frontend Engineer",
+   "companyName": "Mesa Robotics",
+   "companyLogo": "",
+   "jobIndustry": [
+    "Software Engineering"
+   ],
+   "jobType": [
+    "Full-Time"
+   ],
+   "jobGeo": "Bulgaria,  Poland,  UK,  USA",
+   "jobLevel": "Midweight",
+   "jobExcerpt": "Mesa Robotics",
+   "jobDescription": "<p>Mesa Robotics.</p>",
+   "pubDate": "2026-11-04T09:00:00+00:00"
+  },
+  {
+   "id": 159203,
+   "url": "https://jobicy.com/jobs/159203-salesforce-administrator",
+   "jobSlug": "159203-salesforce-administrator",
+   "jobTitle": "Salesforce Administrator",
+   "companyName": "Mesa Robotics",
+   "companyLogo": "",
+   "jobIndustry": [
+    "Software Engineering"
+   ],
+   "jobType": [
+    "Full-Time"
+   ],
+   "jobGeo": "Anywhere",
+   "jobLevel": "Any",
+   "jobExcerpt": "",
+   "jobDescription": "<p>Admin.</p>",
+   "pubDate": "2026-11-04T09:00:00+00:00"
+  }
+ ],
+ "statusCode": 200,
+ "success": true
+}

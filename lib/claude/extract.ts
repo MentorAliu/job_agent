@@ -8,7 +8,7 @@ import type {
 } from "@anthropic-ai/sdk/resources/messages";
 
 import { quoteInPage } from "@/lib/jobs/eligibility";
-import { pageText } from "@/lib/jobs/page-text";
+import { MAX_PAGE_CHARS, pageText } from "@/lib/jobs/page-text";
 import { postedDay } from "@/lib/jobs/posted";
 import { fetchPublic } from "@/lib/jobs/public-fetch";
 import type { OwnerClock } from "@/lib/jobs/today";
@@ -24,7 +24,7 @@ import { assertWithinBudget, estimateUsd } from "./budget";
 import { getAnthropic } from "./client";
 import type { CliTask } from "./cli/task";
 import { getStageSetup, recordLlmCall, type StageSetup } from "./llm-call";
-import { answerOnCli } from "./send";
+import { answerOnCli, sendRequest } from "./send";
 import { minimalThinking } from "./thinking";
 
 export type ReadPostingResult =
@@ -70,8 +70,11 @@ Rules:
 - Fetch the URL you are given, once. Don't fetch any other page.
 ${EXTRACT_RULES}`;
 
-/** For a command-line agent, which gets the page the app fetched. */
-export const EXTRACT_CLI_SYSTEM_PROMPT = `You read one job posting, given as the text of its page, and copy its facts into the JSON schema you are given.
+/**
+ * For a posting given as text: a page the app fetched for a command-line
+ * agent, a job board's feed, or what the owner pasted.
+ */
+export const EXTRACT_TEXT_SYSTEM_PROMPT = `You read one job posting, given as the text of its page, and copy its facts into the JSON schema you are given.
 
 Rules:
 ${EXTRACT_RULES}`;
@@ -132,6 +135,11 @@ export function buildExtractRequest(
   };
 }
 
+/** The request's words for a posting given as text. */
+function textPrompt(url: string, pageText: string, today: string): string {
+  return `Read the job posting at ${url} into the schema. Today is ${today}. This is the page's text:\n\n<page>\n${pageText}\n</page>`;
+}
+
 /** Step 4 as a command-line agent's task, with the page in the prompt. */
 export function extractTask(
   url: string,
@@ -142,10 +150,33 @@ export function extractTask(
   return {
     stage: "extract",
     model,
-    system: EXTRACT_CLI_SYSTEM_PROMPT,
-    prompt: `Read the job posting at ${url} into the schema. Today is ${today}. This is the page's text:\n\n<page>\n${pageText}\n</page>`,
+    system: EXTRACT_TEXT_SYSTEM_PROMPT,
+    prompt: textPrompt(url, pageText, today),
     schema: zodOutputFormat(jobExtractionSchema).schema,
     effort: "low",
+  };
+}
+
+/**
+ * The Messages request for step 4 on a posting given as text, such as a job
+ * board's feed or what the owner pasted: no tools, the text in the prompt.
+ */
+export function buildExtractTextRequest(
+  url: string,
+  pageText: string,
+  model: string,
+  today: string,
+): MessageCreateParamsNonStreaming {
+  return {
+    model,
+    max_tokens: MAX_TOKENS,
+    ...minimalThinking(model),
+    system: EXTRACT_TEXT_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: textPrompt(url, pageText, today) }],
+    output_config: {
+      effort: "low",
+      format: zodOutputFormat(jobExtractionSchema),
+    },
   };
 }
 
@@ -225,7 +256,7 @@ function postingResult(
 async function readOnCli(
   setup: StageSetup,
   url: string,
-  runId: string,
+  runId: string | null,
   clock: OwnerClock,
 ): Promise<ReadPostingResult | null> {
   if (!setup.engine) return null;
@@ -242,22 +273,23 @@ async function readOnCli(
     setup,
     extractTask(url, text, setup.model, clock.today),
     (output) => jobExtractionSchema.parse(output),
-    runId,
+    runId ?? undefined,
   );
   if (!answer) return null;
-  const costUsd = await answer.record({ runId });
+  const costUsd = await answer.record(runId ? { runId } : {});
   return postingResult(answer.value, text, clock, costUsd);
 }
 
 /**
  * Step 4 of the pipeline: fetches one posting and reads its facts with
- * structured output, on the agent Settings picked or the Claude API. Pages
+ * structured output, on the agent Settings picked or the Claude API. A role
+ * the owner adds has no run, so its `runId` is null. Pages
  * that can't be read or aren't an open posting come back as skipped, with
  * the reason. Every response is logged to `llm_call`.
  */
 export async function readPosting(
   url: string,
-  runId: string,
+  runId: string | null,
   clock: OwnerClock,
   client: Anthropic = getAnthropic(),
 ): Promise<ReadPostingResult> {
@@ -280,13 +312,16 @@ export async function readPosting(
   let answerStart = 0;
   let stopReason: string | null = null;
   for (let turn = 0; turn < MAX_TURNS; turn++) {
-    await assertWithinBudget(estimate, runId);
+    await assertWithinBudget(estimate, runId ?? undefined);
     const { data: message, request_id } = await api.messages
       .create(request)
       .withResponse();
-    costUsd += await recordLlmCall(setup, message.usage, request_id ?? null, {
-      runId,
-    });
+    costUsd += await recordLlmCall(
+      setup,
+      message.usage,
+      request_id ?? null,
+      runId ? { runId } : {},
+    );
     content = message.content;
     const outcome = fetchOutcome(content);
     if (outcome) fetched = outcome;
@@ -330,4 +365,57 @@ export async function readPosting(
     return skip("Claude's answer didn't match the facts schema.");
   }
   return postingResult(extraction, fetched.pageText, clock, costUsd);
+}
+
+/**
+ * Step 4 on a posting given as text instead of a link to fetch: a job
+ * board's feed, or a posting the owner pasted. Runs on the agent Settings
+ * picked, else on the Claude API. The text is cut at MAX_PAGE_CHARS, about
+ * as much as web fetch keeps. Every response is logged to `llm_call`.
+ */
+export async function readPostingText(
+  url: string,
+  text: string,
+  runId: string | null,
+  clock: OwnerClock,
+  client: Anthropic = getAnthropic(),
+): Promise<ReadPostingResult> {
+  const setup = await getStageSetup("extract");
+  const page = text.slice(0, MAX_PAGE_CHARS);
+  const request = buildExtractTextRequest(url, page, setup.model, clock.today);
+  const sent = await sendRequest({
+    setup,
+    request,
+    estimateUsd: estimateUsd(setup, {
+      inputTokens: Math.ceil(page.length / 3) + 2000,
+      outputTokens: MAX_TOKENS,
+    }),
+    ...(runId ? { runId } : {}),
+    client,
+    cliTask: extractTask(url, page, setup.model, clock.today),
+  });
+  const costUsd = await sent.record(runId ? { runId } : undefined);
+  const skip = (reason: string): ReadPostingResult => ({
+    kind: "skipped",
+    reason,
+    final: true,
+    costUsd,
+  });
+  const { stop_reason: stopReason, content } = sent.message;
+  if (stopReason === "refusal")
+    return skip("Claude declined to read the posting.");
+  if (stopReason === "max_tokens")
+    return skip("The posting was too long to read.");
+  const answer = content.filter((block) => block.type === "text").at(-1)?.text;
+  if (!answer) return skip("Claude returned no facts for the posting.");
+  try {
+    return postingResult(
+      zodOutputFormat(jobExtractionSchema).parse(answer),
+      page,
+      clock,
+      costUsd,
+    );
+  } catch {
+    return skip("Claude's answer didn't match the facts schema.");
+  }
 }

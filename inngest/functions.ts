@@ -1,5 +1,6 @@
 import type { InngestFunction } from "inngest";
 
+import { addRole } from "./add-role";
 import { buildCv } from "./build-cv";
 import { checkEngineFunction } from "./check-engine";
 import { checkListings } from "./check-listings";
@@ -21,5 +22,6 @@ export const functions: InngestFunction.Any[] = [
   buildCv,
   checkListings,
   checkEngineFunction,
+  addRole,
   morningClock,
 ];

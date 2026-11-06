@@ -109,6 +109,12 @@ describe("asking the employer's tracking system", () => {
     expect(probeFor("https://intranet.corp/jobs/1")).toBeNull();
     expect(probeFor("https://acme.com:8443/jobs/1")).toBeNull();
     expect(probeFor("mailto:jobs@acme.com")).toBeNull();
+    // Sites whose terms forbid apps to read their pages, for roles the
+    // owner added from them.
+    expect(
+      probeFor("https://www.linkedin.com/jobs/view/senior-react-4012345"),
+    ).toBeNull();
+    expect(probeFor("https://de.indeed.com/viewjob?jk=abc123")).toBeNull();
     // Only the systems' own domains, and a bad escape doesn't throw.
     expect(probeFor("https://notgreenhouse.io/acme/jobs/1")).toMatchObject({
       kind: "page",

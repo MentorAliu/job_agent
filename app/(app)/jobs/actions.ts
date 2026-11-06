@@ -3,7 +3,8 @@
 import { refresh } from "next/cache";
 
 import { inngest } from "@/inngest/client";
-import { tailorRequested } from "@/inngest/events";
+import { roleAddRequested, tailorRequested } from "@/inngest/events";
+import { AddRoleError, addRole, markAddUnsent } from "@/lib/dal/added-roles";
 import {
   markApplied,
   markTailoringFailed,
@@ -24,6 +25,7 @@ import {
   toFieldErrors,
   type ActionResult,
 } from "@/lib/schemas/action";
+import { addRoleSchema } from "@/lib/schemas/added-role";
 import { savedAnswerSchema } from "@/lib/schemas/profile";
 import {
   DOCUMENT_KINDS,
@@ -173,4 +175,37 @@ export async function saveKitAnswerAction(
     throw error;
   }
   return { ok: true };
+}
+
+const ADD_SEND_FAILED_MESSAGE =
+  "Couldn't start reading the role. Check that the Inngest server is running, then try again.";
+
+/**
+ * Add a role, from the Roles page: a posting's link, and its text when the
+ * app can't read the page. Claude reads, checks and scores it in the
+ * background, and makes its kit when the owner can take it.
+ */
+export async function addRoleAction(
+  input: unknown,
+): Promise<ActionResult<{ addedRoleId: string }>> {
+  const parsed = addRoleSchema.safeParse(input);
+  if (!parsed.success)
+    return { ok: false, errors: toFieldErrors(parsed.error) };
+  let addedRoleId: string;
+  try {
+    addedRoleId = await addRole(parsed.data);
+  } catch (error) {
+    if (error instanceof AddRoleError) return formError(error.message);
+    throw error;
+  }
+  try {
+    await inngest.send(roleAddRequested.create({ addedRoleId }));
+  } catch (error) {
+    console.error("Couldn't send the add-role event", error);
+    await markAddUnsent(addedRoleId, ADD_SEND_FAILED_MESSAGE);
+    refresh();
+    return formError(ADD_SEND_FAILED_MESSAGE);
+  }
+  refresh();
+  return { ok: true, addedRoleId };
 }

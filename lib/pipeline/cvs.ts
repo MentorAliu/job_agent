@@ -21,6 +21,8 @@ export type CvBuild = {
   content: CvContent | null;
   keywords: string[] | null;
   claimFlags: ClaimCheck | null;
+  /** Bullets already left out to fit, when the CV is drawn again. */
+  trimmed: number;
 };
 
 export async function getCvBuild(id: string): Promise<CvBuild | null> {
@@ -33,6 +35,7 @@ export async function getCvBuild(id: string): Promise<CvBuild | null> {
       content: builtCv.content,
       keywords: builtCv.keywords,
       claimFlags: builtCv.claimFlags,
+      trimmed: builtCv.trimmed,
     })
     .from(builtCv)
     .where(eq(builtCv.id, id));

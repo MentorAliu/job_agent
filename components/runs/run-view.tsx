@@ -27,7 +27,12 @@ import {
 } from "@/components/ui/table";
 import type { RunJobView, RunView as Run } from "@/lib/dal/runs";
 import { runQuery } from "@/lib/run-polling";
-import { isRunActive, RUN_STAGES, type RunStage } from "@/lib/schemas/job";
+import {
+  isRunActive,
+  RUN_STAGES,
+  RUN_TRIGGER_LABELS,
+  type RunStage,
+} from "@/lib/schemas/job";
 import { cn } from "@/lib/utils";
 
 import {
@@ -75,7 +80,7 @@ export function RunView({ runId }: { runId: string }) {
         title="Search run"
         description={
           <p>
-            {run.trigger === "scheduled" ? "Daily run" : "Search now"}, started{" "}
+            {RUN_TRIGGER_LABELS[run.trigger]}, started{" "}
             <LocalDate iso={run.startedAt} withTime />
             {run.finishedAt
               ? `, took ${duration(run.startedAt, run.finishedAt)}`
@@ -186,6 +191,9 @@ export function RunView({ runId }: { runId: string }) {
             <Stat label="Unclear" value={counts.unclear} />
             <Stat label="Not eligible" value={counts.notEligible} />
             <Stat label="Scored" value={counts.scored} />
+            {run.stats.rescored ? (
+              <Stat label="Scored again" value={run.stats.rescored} />
+            ) : null}
             <Stat label="Duplicates" value={run.stats.duplicates} />
             <Stat label="Skipped" value={run.stats.skipped} />
           </dl>

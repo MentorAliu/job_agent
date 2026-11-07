@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import type { RunListItem, RunPage } from "@/lib/dal/runs";
 import { DAILY_RUN_TIME } from "@/lib/jobs/today";
-import { isRunActive } from "@/lib/schemas/job";
+import { isRunActive, RUN_TRIGGER_LABELS } from "@/lib/schemas/job";
 import { cn } from "@/lib/utils";
 
 import { duration, formatCost, progressLine } from "./run-labels";
@@ -189,7 +189,7 @@ function RunRow({ run }: { run: RunListItem }) {
           <LocalDate iso={run.startedAt} format={WHEN} />
         </Link>
         <div className="text-xs text-muted-foreground">
-          {run.trigger === "scheduled" ? "Daily run" : "Search now"}
+          {RUN_TRIGGER_LABELS[run.trigger]}
         </div>
         <div className="mt-2 flex flex-col items-start gap-1 md:hidden">
           <RunStatusPill status={run.status} />

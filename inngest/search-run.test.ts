@@ -86,6 +86,8 @@ const store = {
   textReads: [] as string[],
   /** Each discover call's scope, in order. */
   scopes: [] as SearchScope[],
+  /** Roles a change to the profile has the next run score again. */
+  rescoreIds: [] as string[],
 };
 
 /** A database write that fails the first time it touches `counts`. */
@@ -538,6 +540,19 @@ vi.mock("@/lib/pipeline/listings", () => ({
   },
 }));
 
+vi.mock("@/lib/pipeline/rescore", () => ({
+  rescoreIfProfileChanged: async () => {
+    const roles = store.jobs.filter((stored) =>
+      store.rescoreIds.includes(stored.id),
+    );
+    for (const stored of roles) {
+      Object.assign(stored, { status: "new", score: null, scoreReasons: null });
+    }
+    store.rescoreIds = [];
+    return { changed: roles.length > 0, rescored: roles.length };
+  },
+}));
+
 vi.mock("@/lib/claude/llm-call", async () => ({
   ...(await vi.importActual<object>("@/lib/claude/llm-call")),
   getStageSetup: async (stage: string, model?: string) => ({
@@ -784,6 +799,7 @@ describe("runSearch (steps 2–6)", () => {
     store.feedChecks.clear();
     store.textReads = [];
     store.scopes = [];
+    store.rescoreIds = [];
   });
 
   it("stores at least 10 postings, each with facts, a quoted verdict and a scored match", async () => {
@@ -1367,6 +1383,69 @@ describe("runSearch (steps 2–6)", () => {
     ]);
     expect(byCompany("Remotely")?.status).toBe("ready");
     expect(byCompany("Sentco")?.status).toBe("applied");
+  });
+
+  it("scores the waiting and passed roles again after a profile change, with the new postings", async () => {
+    const earlier = (
+      company: string,
+      status: StoredJob["status"],
+      score: number,
+    ): StoredJob => {
+      const item = posting(
+        company,
+        "Full-stack Engineer",
+        "Remote in Europe.",
+        ["Europe"],
+      );
+      const url = `https://remoteok.com/remote-jobs/${company.toLowerCase()}-full-stack-engineer-41`;
+      return {
+        id: crypto.randomUUID(),
+        canonicalUrl: url,
+        dedupeKey: url,
+        company,
+        title: item.title,
+        descriptionMd: `${item.title}\n${company}\n${item.quote}`,
+        facts: factsFor(item, url),
+        eligibility: "eligible",
+        status,
+        score,
+        scoreReasons: { reasons: ["Old profile."], gaps: [] },
+      };
+    };
+    const waiting = earlier("Waitwell", "new", 80);
+    const passed = earlier("Passmore", "skipped", 60);
+    store.jobs = [waiting, passed];
+    store.rescoreIds = [waiting.id, passed.id];
+
+    const runId = newRun();
+    const { step, ids } = fakeStep();
+    await runSearch(runId, step);
+
+    expect(ids.indexOf("recheck-roles")).toBeLessThan(
+      ids.indexOf("rescore-roles"),
+    );
+    expect(ids.indexOf("rescore-roles")).toBeLessThan(
+      ids.indexOf("score-submit"),
+    );
+    for (const role of [waiting, passed]) {
+      expect(role.status).toBe("new");
+      expect(role.score).not.toBeNull();
+      expect(role.scoreReasons?.reasons).not.toEqual(["Old profile."]);
+    }
+    expect(store.runs.get(runId)?.stats).toMatchObject({ rescored: 2 });
+    // The new postings are scored in the same run.
+    expect(
+      store.jobs.filter(
+        (stored) => stored.firstRunId === runId && stored.score !== null,
+      ).length,
+    ).toBeGreaterThanOrEqual(10);
+  });
+
+  it("scores nothing again when the profile didn't change", async () => {
+    const runId = newRun();
+    const { step } = fakeStep();
+    await runSearch(runId, step);
+    expect(store.runs.get(runId)?.stats?.rescored).toBeUndefined();
   });
 
   it("looks past the job sites for postings on employers' own careers pages", async () => {

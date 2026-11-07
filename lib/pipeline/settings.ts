@@ -5,6 +5,11 @@ import { eq } from "drizzle-orm";
 import { settings } from "@/db/schema";
 import { db } from "@/lib/dal/db";
 import {
+  DEFAULT_CV_TEMPLATE,
+  isCvTemplate,
+  type CvTemplate,
+} from "@/lib/schemas/cv-template";
+import {
   DEFAULT_PRICE_TABLE,
   DEFAULT_SEARCH_DOMAINS,
   DEFAULT_STAGE_MODELS,
@@ -19,8 +24,8 @@ import {
 // The one `settings` row, for the Inngest steps and for lib/dal (which checks
 // the session first). Every step reads it when it runs, so a change made in
 // Settings applies from the next run on. Only the daily search, the monthly
-// budget and what the agents run on come from the row; the rest is fixed in
-// code.
+// budget, what the agents run on and the CV design come from the row; the
+// rest is fixed in code.
 
 export type AppSettings = {
   dailyRunEnabled: boolean;
@@ -31,6 +36,8 @@ export type AppSettings = {
   prices: PriceTable;
   /** What the agent steps run on. A command-line engine falls back to the API. */
   agentEngine: AgentEngine;
+  /** The design apply kits are drawn in, and the CV builder's first choice. */
+  cvTemplate: CvTemplate;
   /** False until Settings is first saved: the monthly cap comes from .env until then. */
   saved: boolean;
 };
@@ -39,7 +46,11 @@ export const DEFAULT_BUDGETS = { monthlyBudgetUsd: 20, runBudgetUsd: 1 };
 
 type SettingsRow = Pick<
   typeof settings.$inferSelect,
-  "dailyRunEnabled" | "monthlyBudgetUsd" | "prices" | "agentEngine"
+  | "dailyRunEnabled"
+  | "monthlyBudgetUsd"
+  | "prices"
+  | "agentEngine"
+  | "cvTemplate"
 >;
 
 function usdFromEnv(
@@ -82,6 +93,7 @@ export function resolveSettings(
   env: Record<string, string | undefined> = process.env,
 ): AppSettings {
   const prices = priceTableSchema.safeParse(row?.prices ?? DEFAULT_PRICE_TABLE);
+  const template = row?.cvTemplate;
   return {
     dailyRunEnabled: row?.dailyRunEnabled ?? true,
     searchDomains: DEFAULT_SEARCH_DOMAINS,
@@ -94,6 +106,7 @@ export function resolveSettings(
     models: DEFAULT_STAGE_MODELS,
     prices: prices.success ? prices.data : DEFAULT_PRICE_TABLE,
     agentEngine: row?.agentEngine ?? defaultEngine(env),
+    cvTemplate: isCvTemplate(template) ? template : DEFAULT_CV_TEMPLATE,
     saved: row !== null,
   };
 }
@@ -105,6 +118,7 @@ export async function readSettings(): Promise<AppSettings> {
       monthlyBudgetUsd: settings.monthlyBudgetUsd,
       prices: settings.prices,
       agentEngine: settings.agentEngine,
+      cvTemplate: settings.cvTemplate,
     })
     .from(settings)
     .where(eq(settings.id, 1));

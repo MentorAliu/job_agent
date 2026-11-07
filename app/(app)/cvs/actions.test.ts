@@ -11,8 +11,15 @@ const REQUEST_ID = "1e2d3c4b-5a69-4788-9a0b-1c2d3e4f5a6b";
 
 class NoProfileError extends Error {}
 
-const createBuiltCv = vi.fn(async () => ({ id: CV_ID, addedSkills: [] }));
+const createBuiltCv = vi.fn(
+  async (): Promise<{ id: string; addedSkills: string[] }> => ({
+    id: CV_ID,
+    addedSkills: [],
+  }),
+);
 const markBuiltCvFailed = vi.fn(async () => {});
+const redrawBuiltCv = vi.fn(async (): Promise<string | null> => "classic");
+const undoRedraw = vi.fn(async () => {});
 const saveCvEdit = vi.fn(async (): Promise<SavedEdit> => ({
   kind: "built",
   id: CV_ID,
@@ -29,6 +36,8 @@ const send = vi.fn(async (): Promise<{ ids: string[] }> => ({ ids: ["evt"] }));
 vi.mock("@/lib/dal/cvs", () => ({
   createBuiltCv: (...args: unknown[]) => createBuiltCv(...(args as [])),
   markBuiltCvFailed: (...args: unknown[]) => markBuiltCvFailed(...(args as [])),
+  redrawBuiltCv: (...args: unknown[]) => redrawBuiltCv(...(args as [])),
+  undoRedraw: (...args: unknown[]) => undoRedraw(...(args as [])),
   NoProfileError,
 }));
 vi.mock("@/lib/dal/cv-editor", () => ({
@@ -44,8 +53,13 @@ vi.mock("@/inngest/client", () => ({
   inngest: { send: (...args: unknown[]) => send(...(args as [])) },
 }));
 
-const { addCvSkillsAction, buildCvAction, deleteCvAction, saveCvEditAction } =
-  await import("./actions");
+const {
+  addCvSkillsAction,
+  buildCvAction,
+  deleteCvAction,
+  redrawCvAction,
+  saveCvEditAction,
+} = await import("./actions");
 
 const form: CvBuildForm = {
   targetTitle: "  Senior Frontend Engineer ",
@@ -54,6 +68,7 @@ const form: CvBuildForm = {
   length: "one_page",
   sections: ["projects", "education"],
   note: "",
+  template: "executive",
 };
 
 describe("buildCvAction", () => {
@@ -74,6 +89,22 @@ describe("buildCvAction", () => {
       expect.objectContaining({
         name: "cv/build.requested",
         data: { cvId: CV_ID },
+      }),
+    );
+  });
+
+  it("says the profile changed only when the form added skills to it", async () => {
+    await buildCvAction(form);
+    expect(send).not.toHaveBeenCalledWith(
+      expect.objectContaining({ name: "profile/changed" }),
+    );
+
+    createBuiltCv.mockResolvedValueOnce({ id: CV_ID, addedSkills: ["Vue"] });
+    await buildCvAction(form);
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "profile/changed",
+        data: { source: "cv_builder" },
       }),
     );
   });
@@ -135,6 +166,7 @@ const edit: CvEditForm = {
   projects: [],
   sections: ["education"],
   length: "one_page",
+  template: "minimal",
 };
 const kit: CvEditSource = { kind: "kit", id: CV_ID };
 
@@ -301,5 +333,47 @@ describe("deleteCvAction", () => {
     expect((await deleteCvAction(CV_ID)).ok).toBe(false);
     expect((await deleteCvAction("nope")).ok).toBe(false);
     expect(deleteBuiltCv).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("redrawCvAction", () => {
+  beforeEach(() => {
+    redrawBuiltCv.mockClear();
+    undoRedraw.mockClear();
+    send.mockClear();
+  });
+
+  it("draws the CV again in the design picked, with no Claude call", async () => {
+    expect(await redrawCvAction({ id: CV_ID, template: "modern" })).toEqual({
+      ok: true,
+    });
+    expect(redrawBuiltCv).toHaveBeenCalledWith(CV_ID, "modern");
+    expect(send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "cv/build.requested",
+        data: { cvId: CV_ID },
+      }),
+    );
+  });
+
+  it("refuses a design that isn't one, and a CV that isn't ready", async () => {
+    expect((await redrawCvAction({ id: CV_ID, template: "fancy" })).ok).toBe(
+      false,
+    );
+    expect(redrawBuiltCv).not.toHaveBeenCalled();
+    redrawBuiltCv.mockResolvedValueOnce(null);
+    expect((await redrawCvAction({ id: CV_ID, template: "modern" })).ok).toBe(
+      false,
+    );
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("puts the old design back when drawing can't start", async () => {
+    send.mockRejectedValueOnce(new Error("connect ECONNREFUSED"));
+    vi.spyOn(console, "error").mockImplementationOnce(() => {});
+    expect((await redrawCvAction({ id: CV_ID, template: "modern" })).ok).toBe(
+      false,
+    );
+    expect(undoRedraw).toHaveBeenCalledWith(CV_ID, "classic");
   });
 });

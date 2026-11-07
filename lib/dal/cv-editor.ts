@@ -17,7 +17,9 @@ import {
   type EditFrom,
   type EditorCatalogue,
 } from "@/lib/cvs/editor";
+import { readSettings } from "@/lib/pipeline/settings";
 import type { CvBuildRequest } from "@/lib/schemas/cv-builder";
+import { LEGACY_CV_TEMPLATE } from "@/lib/schemas/cv-template";
 import {
   EDIT_SKILLS_MAX,
   type CvEditForm,
@@ -118,6 +120,7 @@ async function loadSource(
           title: request.targetTitle,
           sections: request.sections,
           length: request.length,
+          template: request.template ?? LEGACY_CV_TEMPLATE,
         },
         label: request.targetTitle,
         posting: { jobText: request.jobText, keywords: row.keywords ?? [] },
@@ -151,6 +154,7 @@ async function loadSource(
           title: row.content.headline ?? current.basics.headline,
           sections: row.content.sections ?? null,
           length: null,
+          template: row.content.template ?? null,
         },
         label: `CV for ${row.title} at ${row.company}`,
         posting: NO_POSTING,
@@ -187,7 +191,8 @@ export async function getCvEditorStart(
 
   const loaded = await loadSource(db, source, data);
   if (!loaded) return null;
-  const { form, catalogue } = editorStart(data, loaded.from);
+  const { cvTemplate } = await readSettings();
+  const { form, catalogue } = editorStart(data, loaded.from, cvTemplate);
 
   let saveAs: SaveAs = { kind: "new" };
   if (intoKit(loaded.role)) {
@@ -292,6 +297,7 @@ export async function saveCvEdit(
       length: form.length,
       sections: content.sections ?? [],
       note: "",
+      template: form.template,
     };
     const [created] = await tx
       .insert(builtCv)
@@ -343,7 +349,12 @@ export async function addSkillsToKitCv(
     );
   }
 
-  const { form, catalogue } = editorStart(current.data, loaded.from);
+  const { cvTemplate } = await readSettings();
+  const { form, catalogue } = editorStart(
+    current.data,
+    loaded.from,
+    cvTemplate,
+  );
   // A line whose facts left the profile would drop off without the owner
   // seeing it, so that's the editor's to show.
   const { content, check, sections } = loaded.from;

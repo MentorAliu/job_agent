@@ -37,6 +37,7 @@ import {
   type CvBuildForm,
 } from "@/lib/schemas/cv-builder";
 
+import { DesignPicker } from "./design-picker";
 import { LENGTH_LABELS, SECTION_LABELS } from "./labels";
 
 // The CV builder's form. It opens filled in from the profile, so building a
@@ -200,6 +201,31 @@ export function BuildCvForm({
             )}
           />
         </FieldGroup>
+      </FormSection>
+
+      <FormSection
+        title="Design"
+        description="Every design is one column of real text with standard headings, so applicant tracking systems read them all the same way. You can download the CV as a PDF or a Word file, and switch its design later for free."
+      >
+        <Controller
+          control={control}
+          name="template"
+          render={({ field, fieldState }) => (
+            <FieldSet data-invalid={fieldState.invalid || undefined}>
+              <FieldLegend className="sr-only">Design</FieldLegend>
+              <DesignPicker
+                id="design"
+                name={field.name}
+                value={field.value}
+                onChange={field.onChange}
+                invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && (
+                <FieldError errors={errorList(fieldState.error)} />
+              )}
+            </FieldSet>
+          )}
+        />
       </FormSection>
 
       <FormSection title="Anything else (optional)">

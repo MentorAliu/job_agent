@@ -21,6 +21,7 @@ import {
   type Eligibility,
   type RunStats,
   type RunStatus,
+  type RunTrigger,
   type ScoreReasons,
 } from "@/lib/schemas/job";
 
@@ -47,7 +48,7 @@ export type RunJobView = {
 
 export type RunView = {
   id: string;
-  trigger: "manual" | "scheduled";
+  trigger: RunTrigger;
   status: RunStatus;
   startedAt: string;
   finishedAt: string | null;
@@ -145,7 +146,7 @@ export async function getRun(id: string): Promise<RunView | null> {
 }
 
 export type RunListItem = RunSummary & {
-  trigger: "manual" | "scheduled";
+  trigger: RunTrigger;
   /** Postings the run stored that have a score. */
   scored: number;
 };

@@ -6,9 +6,28 @@ export const cvUploaded = eventType("profile/cv.uploaded", {
   schema: z.object({ fileId: z.uuid() }),
 });
 
+/** What the owner saved: an edit, the preferences, a CV, or the CV builder's skills. */
+export const PROFILE_CHANGE_SOURCES = [
+  "profile",
+  "preferences",
+  "cv",
+  "cv_builder",
+] as const;
+export type ProfileChangeSource = (typeof PROFILE_CHANGE_SOURCES)[number];
+
 /**
- * Sent by Search now and by the daily cron, after the run row is created.
- * Starts steps 2–6 of the pipeline.
+ * Sent after the owner saves something scoring reads may have changed in:
+ * the profile (an edit, a CV that was read, a skill the CV builder added)
+ * or the job preferences. A few quiet minutes later, the app searches again
+ * and scores the waiting and recently passed roles against the new profile.
+ */
+export const profileChanged = eventType("profile/changed", {
+  schema: z.object({ source: z.enum(PROFILE_CHANGE_SOURCES) }),
+});
+
+/**
+ * Sent by Search now, the daily cron and a profile change, after the run
+ * row is created. Starts steps 2–6 of the pipeline.
  */
 export const searchRunRequested = eventType("search/run.requested", {
   schema: z.object({ runId: z.uuid() }),

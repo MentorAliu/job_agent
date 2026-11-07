@@ -4,9 +4,11 @@ const nextConfig: NextConfig = {
   // The Dockerfile sets NEXT_OUTPUT=standalone. Vercel and `pnpm dev` leave it unset.
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   cacheComponents: true,
-  // The form filler's files, which its download route zips up.
+  // The form filler's files, which its download route zips up, and the
+  // fonts the Inngest steps draw CVs and letters with.
   outputFileTracingIncludes: {
     "/api/extension/download": ["./extension/**/*"],
+    "/api/inngest": ["./lib/documents/fonts/*.ttf"],
   },
   partialPrefetching: true,
   // On every response: no other site can show the app in a frame (where a

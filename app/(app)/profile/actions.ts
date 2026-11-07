@@ -3,6 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 
+import { sendProfileChanged } from "@/inngest/send-profile-changed";
 import {
   saveAnswers,
   savePreferences,
@@ -42,6 +43,7 @@ export async function saveProfileAction(
     if (error instanceof UnknownCvUploadError) return formError(error.message);
     throw error;
   }
+  await sendProfileChanged("profile");
   refresh();
   return { ok: true };
 }
@@ -53,6 +55,7 @@ export async function savePreferencesAction(
   if (!parsed.success)
     return { ok: false, errors: toFieldErrors(parsed.error) };
   await savePreferences(parsed.data);
+  await sendProfileChanged("preferences");
   refresh();
   return { ok: true };
 }

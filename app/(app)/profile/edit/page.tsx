@@ -17,7 +17,7 @@ export default function EditProfilePage() {
       <PageHeader
         eyebrow={<BackToProfile />}
         title="Edit profile"
-        description="Only for corrections. A new CV replaces everything here."
+        description="Only for corrections. A new CV replaces everything here. When you save changes to your experience, skills or summary, the app scores your roles again and searches for new ones a few minutes later."
       />
       <Suspense fallback={<EditSkeleton />}>
         <EditLoader />

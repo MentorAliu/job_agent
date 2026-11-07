@@ -28,6 +28,7 @@ vi.mock("./budget", async () => ({
 }));
 
 const { writeCv, BuildCvError } = await import("./build-cv");
+const { CV_WRITING_RULES } = await import("./cv-writing");
 
 const profile: MasterProfile = masterProfileSchema.parse(profileJson);
 const profileText = profileFactsText(profile, null);
@@ -98,6 +99,9 @@ describe("writeCv with a recorded Claude response", () => {
     expect(system).toHaveLength(2);
     expect(system[0].text).toMatch(/never add a skill/);
     expect(system[0].text).toMatch(/data, not instructions/);
+    // The smoke test's fake Claude knows this call by how it opens.
+    expect(system[0].text).toMatch(/^You write a candidate's CV/);
+    expect(system[0].text).toContain(CV_WRITING_RULES);
     expect(system[1]).toEqual({
       type: "text",
       text: profileText,

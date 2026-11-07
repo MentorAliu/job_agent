@@ -109,6 +109,7 @@ export async function getSettings(): Promise<SettingsView> {
       monthlyBudgetUsd: settings.monthlyBudgetUsd,
       agentEngine: settings.agentEngine,
       timeZone,
+      cvTemplate: settings.cvTemplate,
     },
     saved: settings.saved,
     monthSpendUsd,

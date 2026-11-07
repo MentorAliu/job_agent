@@ -26,7 +26,7 @@ import { PDF_MIME } from "@/lib/schemas/cv-upload";
 
 import { inngest } from "./client";
 import { permanentOrRetry } from "./errors";
-import { cvUploaded } from "./events";
+import { cvUploaded, profileChanged } from "./events";
 
 /**
  * A refusal, an over-long CV, an unreadable DOCX or a full monthly budget
@@ -91,6 +91,12 @@ export const parseCv = inngest.createFunction(
         throw permanentOrRetry(error, PERMANENT_ERRORS);
       }
     });
+
+    // A new CV is a new profile: the roles found so far are scored again.
+    await step.sendEvent(
+      "profile-changed",
+      profileChanged.create({ source: "cv" }),
+    );
 
     await step.run("delete-replaced-cv-files", async () => {
       // Without the key the files can't be reached; they stay listed.

@@ -51,6 +51,7 @@ import {
 } from "@/lib/schemas/cv-editor";
 import { cn } from "@/lib/utils";
 
+import { DesignPicker } from "./design-picker";
 import { LENGTH_LABELS, SECTION_LABELS } from "./labels";
 
 // The CV editor: the CV laid out as it prints, with a button on every line
@@ -137,6 +138,7 @@ export function CvEditor({
           {/* After the CV on a phone, beside it on a wide screen. */}
           <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-20">
             <SaveNote data={data} />
+            <DesignField />
             {intoKit ? null : <LengthField />}
           </aside>
         </div>
@@ -203,6 +205,40 @@ function SaveNote({ data }: { data: CvEditorData }) {
         page and it shows up here.
       </p>
     </section>
+  );
+}
+
+function DesignField() {
+  const { control } = useFormContext<CvEditForm>();
+  return (
+    <Controller
+      control={control}
+      name="template"
+      render={({ field, fieldState }) => (
+        <FieldSet
+          data-invalid={fieldState.invalid || undefined}
+          className="rounded-xl border bg-card p-4 shadow-xs"
+        >
+          <FieldLegend variant="label">Design</FieldLegend>
+          <FieldDescription id="design-description">
+            All of them are one column an applicant tracking system reads in
+            order.
+          </FieldDescription>
+          <DesignPicker
+            id="design"
+            name={field.name}
+            value={field.value}
+            onChange={field.onChange}
+            invalid={fieldState.invalid}
+            describedBy="design-description"
+            compact
+          />
+          {fieldState.invalid && (
+            <FieldError errors={errorList(fieldState.error)} />
+          )}
+        </FieldSet>
+      )}
+    />
   );
 }
 

@@ -248,6 +248,16 @@ export function letterView(
   };
 }
 
+/** "18 October 2026", in the owner's time zone: the letter's date line. */
+export function letterDate(timeZone: string, at: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(at);
+}
+
 /** The letter as plain text, for the copy button. */
 export function letterText(view: LetterView): string {
   return [

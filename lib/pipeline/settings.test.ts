@@ -124,6 +124,7 @@ describe("resolveSettings", () => {
         monthlyBudgetUsd: 20,
         agentEngine: "claude_api",
         prices: { models: "none" } as never,
+        cvTemplate: null,
       },
       {},
     );
@@ -147,6 +148,7 @@ describe("resolveSettings", () => {
           monthlyBudgetUsd: 20,
           agentEngine: "claude_api",
           prices: null,
+          cvTemplate: null,
         },
         env,
       ).agentEngine,

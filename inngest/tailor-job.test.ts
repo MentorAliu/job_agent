@@ -2,6 +2,7 @@ import { NonRetriableError } from "inngest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CvView, LetterView } from "@/lib/documents/view";
+import type { CvTemplate } from "@/lib/schemas/cv-template";
 import type { SavedDocument, TailorJob } from "@/lib/pipeline/tailoring";
 import {
   masterProfileSchema,
@@ -63,6 +64,9 @@ const store = {
   client: null as ReturnType<typeof fakeAnthropic> | null,
   /** The views each PDF was drawn from. */
   rendered: [] as (CvView | LetterView)[],
+  /** The design each PDF was drawn in. */
+  designs: [] as (CvTemplate | undefined)[],
+  settingsTemplate: "executive" as CvTemplate,
 };
 
 vi.mock("@/lib/claude/client", () => ({
@@ -109,16 +113,27 @@ vi.mock("@/lib/documents/pdf", async () => {
     "@/lib/documents/pdf",
   );
   return {
-    renderCvPdf: async (view: CvView) => {
+    renderCvPdf: async (view: CvView, template?: CvTemplate) => {
       store.rendered.push(view);
-      return actual.renderCvPdf(view);
+      store.designs.push(template);
+      return actual.renderCvPdf(view, template);
     },
-    renderLetterPdf: async (view: LetterView, date: string) => {
+    renderLetterPdf: async (
+      view: LetterView,
+      date: string,
+      template?: CvTemplate,
+    ) => {
       store.rendered.push(view);
-      return actual.renderLetterPdf(view, date);
+      store.designs.push(template);
+      return actual.renderLetterPdf(view, date, template);
     },
   };
 });
+
+// The design set in Settings, which kits are drawn in.
+vi.mock("@/lib/pipeline/settings", () => ({
+  readSettings: async () => ({ cvTemplate: store.settingsTemplate }),
+}));
 
 const own = (requestId: string) =>
   store.job?.tailoring?.requestId === requestId;
@@ -378,6 +393,8 @@ beforeEach(() => {
   store.events = [];
   store.calls = [];
   store.rendered = [];
+  store.designs = [];
+  store.settingsTemplate = "executive";
   assertWithinBudget.mockReset();
 });
 
@@ -455,6 +472,8 @@ describe("tailoring a shortlisted role", () => {
       profileLinks,
     ]);
     expect(store.documents[0].headerLinks).toEqual(profileLinks);
+    // The CV and the letter in the design set in Settings.
+    expect(store.designs).toEqual(["executive", "executive"]);
 
     // Inngest's step history holds ids, never the owner's text.
     const history = JSON.stringify(outputs);
@@ -748,11 +767,14 @@ describe("drawing the owner's edited CV", () => {
     store.events = [];
     store.calls = [];
     store.rendered = [];
+    store.designs = [];
 
     const first = store.documents.find((d) => d.kind === "cv")!;
     const content = structuredClone(first.content as CvContent);
     content.headline = "Frontend Lead";
     content.experience = content.experience.slice(0, 1);
+    // Picked in the editor, over the design set in Settings.
+    content.template = "minimal";
     const requestId = saveEdit(content);
     respond([]);
     const { step, ids } = fakeStep();
@@ -771,6 +793,7 @@ describe("drawing the owner's edited CV", () => {
     const view = store.rendered[0] as CvView;
     expect(view.headline).toBe("Frontend Lead");
     expect(view.experience).toHaveLength(1);
+    expect(store.designs).toEqual(["minimal"]);
     expect(store.events).toEqual([
       {
         type: "documents_ready",

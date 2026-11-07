@@ -14,6 +14,7 @@ const form = {
   length: "one_page",
   sections: ["education"],
   note: "",
+  template: "modern",
 };
 
 describe("cvBuildFormSchema", () => {
@@ -30,6 +31,7 @@ describe("cvBuildFormSchema", () => {
     ["an unknown length", { length: "three_pages" }],
     ["a section twice", { sections: ["education", "education"] }],
     ["a posting too long", { jobText: "x".repeat(12_001) }],
+    ["a design that isn't one", { template: "fancy" }],
   ])("rejects %s", (_, patch) => {
     expect(cvBuildFormSchema.safeParse({ ...form, ...patch }).success).toBe(
       false,
@@ -58,5 +60,16 @@ describe("a build's progress", () => {
     expect(shownBuildStatus({ status: "ready", createdAt }, late)).toBe(
       "ready",
     );
+  });
+
+  it("times a CV drawn again in another design from when that started", () => {
+    const late = start + 2 * 24 * 60 * 60_000;
+    const updatedAt = new Date(late - 5_000);
+    expect(
+      isBuildActive({ status: "rendering", createdAt, updatedAt }, late),
+    ).toBe(true);
+    expect(
+      shownBuildStatus({ status: "rendering", createdAt, updatedAt }, late),
+    ).toBe("rendering");
   });
 });

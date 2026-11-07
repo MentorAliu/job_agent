@@ -19,6 +19,7 @@ import {
 } from "@/lib/pipeline/cvs";
 import { getSnapshotProfile, getTailorInputs } from "@/lib/pipeline/tailoring";
 import { CV_LENGTH_PAGES, MAX_JOB_KEYWORDS } from "@/lib/schemas/cv-builder";
+import { LEGACY_CV_TEMPLATE } from "@/lib/schemas/cv-template";
 import { ownerLinks } from "@/lib/schemas/profile";
 import { citedItems, flaggedIds, toDocuments } from "@/lib/tailor/citations";
 import { factIndex, profileFacts, profileFactsText } from "@/lib/tailor/facts";
@@ -194,9 +195,10 @@ export async function markUnchecked(
 }
 
 /**
- * Draws the PDF, leaving out bullets until it fits the length asked for,
- * and makes the CV ready. The links at the top are the owner's as saved
- * now, standard answers first.
+ * Draws the PDF in the design asked for, leaving out bullets until it fits
+ * the length asked for, and makes the CV ready. The links at the top are
+ * the owner's as saved now, standard answers first. Drawing a ready CV again
+ * in another design counts the bullets it left out before.
  */
 export async function renderStep(cvId: string): Promise<{ pages: number }> {
   const build = await getCvBuild(cvId);
@@ -207,17 +209,22 @@ export async function renderStep(cvId: string): Promise<{ pages: number }> {
   ]);
   if (!profile) throw new NonRetriableError("The profile snapshot is gone.");
   const links = ownerLinks(profile.links, inputs?.answers?.links ?? null);
+  const template = build.request.template ?? LEGACY_CV_TEMPLATE;
   const fitted = await fitToPages(
     build.content,
     CV_LENGTH_PAGES[build.request.length],
     async (content) => {
       const bytes = await renderCvPdf(
         builtCvView(content, build.claimFlags, profile, build.request, links),
+        template,
       );
       return { bytes, pages: pdfPageCount(bytes) };
     },
   );
-  await saveCvPdf(cvId, fitted);
+  await saveCvPdf(cvId, {
+    ...fitted,
+    trimmed: build.trimmed + fitted.trimmed,
+  });
   return { pages: fitted.pages };
 }
 

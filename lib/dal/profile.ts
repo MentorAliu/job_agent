@@ -19,6 +19,7 @@ import {
   type Preferences,
   type SavedAnswer,
 } from "@/lib/schemas/profile";
+import { keepScoringBaseline } from "@/lib/pipeline/rescore";
 import { readOwnerTimeZone } from "@/lib/pipeline/setup";
 import { getStorage } from "@/lib/storage";
 
@@ -247,6 +248,7 @@ export async function saveProfileData(
 ): Promise<{ snapshotId: string }> {
   await getCurrentUser();
   return db.transaction(async (tx) => {
+    await keepScoringBaseline(tx);
     if (cvFileId) {
       const [upload] = await tx
         .select({ id: file.id })
@@ -280,10 +282,13 @@ export async function saveProfileData(
 export async function savePreferences(preferences: Preferences): Promise<void> {
   await getCurrentUser();
   const changes = { preferences, updatedAt: new Date() };
-  await db
-    .insert(profile)
-    .values({ id: PROFILE_ID, ...changes })
-    .onConflictDoUpdate({ target: profile.id, set: changes });
+  await db.transaction(async (tx) => {
+    await keepScoringBaseline(tx);
+    await tx
+      .insert(profile)
+      .values({ id: PROFILE_ID, ...changes })
+      .onConflictDoUpdate({ target: profile.id, set: changes });
+  });
 }
 
 export async function saveAnswers(answers: Answers): Promise<void> {

@@ -13,6 +13,7 @@ import {
 
 import { estimateUsd } from "./budget";
 import { getAnthropic } from "./client";
+import { CV_WRITING_RULES } from "./cv-writing";
 import { getStageSetup } from "./llm-call";
 import { sendRequest } from "./send";
 import { minimalThinking } from "./thinking";
@@ -24,8 +25,9 @@ export const BUILD_CV_SYSTEM_PROMPT = `You write a candidate's CV from the facts
 Rules:
 - Use only the facts in the candidate profile. Reword, reorder, shorten and leave out, but never add a skill, technology, number, title, employer, date, responsibility or result that the facts you cite don't state. When the target role or the posting asks for something the profile doesn't show, leave it out rather than stretch a fact.
 - Every summary and bullet lists in "sources" the ids of the facts it is based on. A bullet under a role cites that role or its highlights.
-- Summary: 2 or 3 sentences, under 60 words, without "I". Open with the target job title and the candidate's strongest strengths for it. No clichés such as "passionate", "results-driven", "team player" or "hard-working".
-- Experience: one entry for every role in the profile, in its order, newest first. Each bullet starts with a strong action verb (present tense for the current role, past tense for the others), says what the candidate did and its result or scale, and keeps every number exactly as the facts give it. One line where possible and two at most, with no "responsible for". Put the bullets that matter most for the target first.
+- Summary: 2 or 3 sentences, under 60 words, without "I". Open with the target job title and the candidate's strongest strengths for it, then back them with the candidate's biggest result or scope from the facts.
+- Experience: one entry for every role in the profile, in its order, newest first, with the bullets that matter most for the target first. One line where possible and two at most.
+${CV_WRITING_RULES}
 - Keywords: tracking systems match the posting's own words. Where a fact backs a term the posting or the target role uses, write it the way the posting does, such as "Next.js" or "CI/CD".
 - Skills: up to 20 profile skill ids, starting with the skills the candidate asked to lead with, in their order, then the others the target needs most.
 - Projects: only when the request asks for them, and only the ones that help the target. Otherwise leave projects empty.

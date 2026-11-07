@@ -16,7 +16,7 @@ export default function PreferencesPage() {
       <PageHeader
         eyebrow={<BackToProfile />}
         title="Job preferences"
-        description="Where you can work from, and the roles the searches look for."
+        description="Where you can work from, and the roles the searches look for. When you change the roles you want, seniority, stack or salary floor, the app scores your roles again and searches for new ones a few minutes later."
       />
       <Suspense fallback={<Spinner />}>
         <PreferencesLoader />

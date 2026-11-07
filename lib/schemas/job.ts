@@ -270,6 +270,11 @@ export type RunStats = {
   /** Postings sent for scoring, and the ones that came back without a score. */
   toScore: number;
   scoreFailed: number;
+  /**
+   * Roles found earlier that this run scores again, after a change to the
+   * profile or preferences that scoring reads. Runs before this have none.
+   */
+  rescored?: number;
   /** Why the run stopped early, or why it failed. */
   stopReason?: string;
 };
@@ -288,6 +293,7 @@ export const RUN_COUNTERS = [
   "skipped",
   "toScore",
   "scoreFailed",
+  "rescored",
 ] as const satisfies readonly (keyof RunStats)[];
 export type RunCounter = (typeof RUN_COUNTERS)[number];
 
@@ -309,6 +315,20 @@ export function emptyRunStats(stage: RunStage = "queued"): RunStats {
     scoreFailed: 0,
   };
 }
+
+/**
+ * What started a run: the daily clock, Search now, or a saved change to the
+ * profile or job preferences that scoring reads (inngest/profile-changed.ts).
+ */
+export const RUN_TRIGGERS = ["scheduled", "manual", "profile"] as const;
+export type RunTrigger = (typeof RUN_TRIGGERS)[number];
+
+/** How the run pages name what started a run. */
+export const RUN_TRIGGER_LABELS: Record<RunTrigger, string> = {
+  scheduled: "Daily run",
+  manual: "Search now",
+  profile: "After a profile change",
+};
 
 export const RUN_STATUSES = [
   "running",

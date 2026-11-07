@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { inngest } from "@/inngest/client";
 import { cvBuildRequested, tailorRequested } from "@/inngest/events";
+import { sendProfileChanged } from "@/inngest/send-profile-changed";
 import { CvEditError } from "@/lib/cvs/editor";
 import { markTailoringFailed } from "@/lib/dal/apply-kit";
 import {
@@ -16,13 +17,15 @@ import {
   createBuiltCv,
   markBuiltCvFailed,
   NoProfileError,
+  redrawBuiltCv,
+  undoRedraw,
 } from "@/lib/dal/cvs";
 import {
   formError,
   toFieldErrors,
   type ActionResult,
 } from "@/lib/schemas/action";
-import { cvBuildFormSchema } from "@/lib/schemas/cv-builder";
+import { cvBuildFormSchema, cvRedrawSchema } from "@/lib/schemas/cv-builder";
 import {
   addCvSkillsSchema,
   cvEditFormSchema,
@@ -47,12 +50,15 @@ export async function buildCvAction(
     return { ok: false, errors: toFieldErrors(parsed.error) };
 
   let id: string;
+  let addedSkills: string[];
   try {
-    ({ id } = await createBuiltCv(parsed.data));
+    ({ id, addedSkills } = await createBuiltCv(parsed.data));
   } catch (error) {
     if (error instanceof NoProfileError) return formError(error.message);
     throw error;
   }
+  // Skills the form added are in the profile now, so scores may change.
+  if (addedSkills.length > 0) await sendProfileChanged("cv_builder");
   try {
     await inngest.send(cvBuildRequested.create({ cvId: id }));
   } catch (error) {
@@ -157,6 +163,30 @@ export async function deleteCvAction(id: unknown): Promise<ActionResult> {
   const cvId = z.uuid().safeParse(id);
   if (!cvId.success || !(await deleteBuiltCv(cvId.data))) {
     return formError("This CV isn't there anymore.");
+  }
+  return { ok: true };
+}
+
+/**
+ * Draws a ready CV again in another design, with the same words, so there's
+ * no Claude call. Its page follows the drawing like a new CV's.
+ */
+export async function redrawCvAction(input: unknown): Promise<ActionResult> {
+  const parsed = cvRedrawSchema.safeParse(input);
+  if (!parsed.success) return formError("Pick one of the designs.");
+  const { id, template } = parsed.data;
+  const before = await redrawBuiltCv(id, template);
+  if (!before) {
+    return formError(
+      "This CV is being drawn already, or it isn't there anymore.",
+    );
+  }
+  try {
+    await inngest.send(cvBuildRequested.create({ cvId: id }));
+  } catch (error) {
+    console.error("Couldn't send the redraw event", error);
+    await undoRedraw(id, before);
+    return formError(DRAW_FAILED_MESSAGE);
   }
   return { ok: true };
 }

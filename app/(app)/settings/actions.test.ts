@@ -26,6 +26,7 @@ const valid: SettingsInput = {
   monthlyBudgetUsd: 10,
   agentEngine: "claude_api",
   timeZone: "Europe/Lisbon",
+  cvTemplate: "executive",
 };
 
 describe("saveSettingsAction", () => {

@@ -3,6 +3,7 @@
 // the form in the browser, the Server Action and Claude's structured output.
 import { z } from "zod";
 
+import { cvTemplateSchema, type CvTemplate } from "./cv-template";
 import { CV_SECTIONS, tailorOutputSchema } from "./tailor";
 
 // ---------------------------------------------------------------------------
@@ -58,16 +59,25 @@ export const cvBuildFormSchema = z.object({
     .string()
     .trim()
     .max(CV_NOTE_MAX, `Keep the note under ${CV_NOTE_MAX} characters.`),
+  template: cvTemplateSchema,
 });
 
 export type CvBuildForm = z.infer<typeof cvBuildFormSchema>;
 
+/** Drawing a ready CV again in another design. */
+export const cvRedrawSchema = z.object({
+  id: z.uuid(),
+  template: cvTemplateSchema,
+});
+
 /**
  * What a built CV was asked for, as stored on its row. The skills are the
- * profile's own skill ids, so the CV cites them like any other fact.
+ * profile's own skill ids, so the CV cites them like any other fact. CVs
+ * saved before designs existed have no template: they're drawn in Classic.
  */
-export type CvBuildRequest = Omit<CvBuildForm, "skills"> & {
+export type CvBuildRequest = Omit<CvBuildForm, "skills" | "template"> & {
   skillIds: string[];
+  template?: CvTemplate;
 };
 
 // ---------------------------------------------------------------------------
@@ -109,21 +119,32 @@ const LOST_MS = 30 * 60 * 1000;
 export const LOST_BUILD_MESSAGE =
   "This CV never finished: the Inngest server stopped or couldn't reach the app. Build it again.";
 
+/**
+ * A build's progress as these checks read it. `updatedAt` moves with every
+ * step, and when a ready CV is drawn again in another design, so a CV made
+ * long ago and drawn again now isn't taken for a lost build.
+ */
+type BuildProgress = {
+  status: BuiltCvStatus;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
+};
+
 /** Whether the build is still going, so its page keeps checking on it. */
 export function isBuildActive(
-  build: { status: BuiltCvStatus; createdAt: string | Date },
+  build: BuildProgress,
   now = Date.now(),
 ): boolean {
   return (
     build.status !== "ready" &&
     build.status !== "failed" &&
-    now - new Date(build.createdAt).getTime() < LOST_MS
+    now - new Date(build.updatedAt ?? build.createdAt).getTime() < LOST_MS
   );
 }
 
 /** The status to show: a build that will never finish reads as failed. */
 export function shownBuildStatus(
-  build: { status: BuiltCvStatus; createdAt: string | Date },
+  build: BuildProgress,
   now = Date.now(),
 ): BuiltCvStatus {
   return build.status === "ready" ||

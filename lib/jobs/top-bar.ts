@@ -70,7 +70,7 @@ export function claudeWorking(
     /** Tailoring requests marked queued or running. */
     kits: TailorState[];
     /** Built CVs not marked ready or failed. */
-    cvs: { status: BuiltCvStatus; createdAt: Date }[];
+    cvs: { status: BuiltCvStatus; createdAt: Date; updatedAt?: Date }[];
     /** Emails, uploaded CVs and added roles being read, within their time limits. */
     reads: number;
   },

@@ -17,6 +17,7 @@ const {
   profileContext,
   readScoreBatch,
   scoreEstimateUsd,
+  scoringKey,
   submitScoreBatch,
 } = await import("./score");
 
@@ -138,6 +139,43 @@ describe("score requests (step 6)", () => {
     expect(profileText).not.toContain(profile.basics.email);
     expect(profileText).not.toContain("github.com");
     expect(profileText).toContain("# Preferences");
+  });
+
+  it("keys the scoring input: new skills or wishes change it, contact details and places don't", () => {
+    const key = scoringKey(profile, preferences);
+    expect(key).toMatch(/^[0-9a-f]{64}$/);
+    expect(scoringKey(profile, preferences)).toBe(key);
+
+    const node = { ...profile.skills[0], id: "skill-node", name: "Node.js" };
+    expect(
+      scoringKey(
+        { ...profile, skills: [...profile.skills, node] },
+        preferences,
+      ),
+    ).not.toBe(key);
+    expect(
+      scoringKey(profile, { ...preferences, roleFocus: "fullstack" }),
+    ).not.toBe(key);
+    expect(
+      scoringKey(profile, {
+        ...preferences,
+        stack: [...preferences.stack, "Python"],
+      }),
+    ).not.toBe(key);
+
+    expect(
+      scoringKey(
+        { ...profile, basics: { ...profile.basics, email: "new@example.com" } },
+        preferences,
+      ),
+    ).toBe(key);
+    expect(
+      scoringKey(profile, {
+        ...preferences,
+        countries: [...preferences.countries, "Albania"],
+        excludedCompanies: ["Initech"],
+      }),
+    ).toBe(key);
   });
 
   it("estimates a batch request at well under a tenth of a cent", () => {

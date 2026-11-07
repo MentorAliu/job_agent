@@ -19,7 +19,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Settings"
-        description="The daily search, what the agents run on and may spend, the form filler, and how the app looks. Everything else runs by itself."
+        description="The daily search, what the agents run on and may spend, your CV design, the form filler, and how the app looks. Everything else runs by itself."
       />
       <Suspense fallback={<SettingsSkeleton />}>
         <SettingsLoader />

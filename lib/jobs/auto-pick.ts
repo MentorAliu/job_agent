@@ -94,9 +94,15 @@ export function pickedReason(candidate: Candidate, today: string): string {
   return `Picked automatically: it scored ${candidate.score}${posted}.`;
 }
 
+/**
+ * How the reason for a role passed over for its score begins. A profile
+ * change brings such roles back to be scored again (lib/jobs/rescore.ts).
+ */
+export const LOW_SCORE_PASS_PREFIX = "Passed over automatically: it scored ";
+
 export function passedReason(candidate: Candidate, today: string): string {
   if (candidate.score < AUTO_PICK_MIN_SCORE || !candidate.postedOn) {
-    return `Passed over automatically: it scored ${candidate.score}, below ${AUTO_PICK_MIN_SCORE}.`;
+    return `${LOW_SCORE_PASS_PREFIX}${candidate.score}, below ${AUTO_PICK_MIN_SCORE}.`;
   }
   return `Passed over automatically: it was posted ${postingAgeDays(candidate.postedOn, today)} days ago, and kits go only to postings up to ${STALE_DAYS} days old. It scored ${candidate.score}.`;
 }

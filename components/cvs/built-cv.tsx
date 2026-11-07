@@ -1,30 +1,40 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import {
   ArrowLeftIcon,
   CheckIcon,
   CircleAlertIcon,
   CopyPlusIcon,
+  DownloadIcon,
   PencilIcon,
   ShieldCheckIcon,
   TriangleAlertIcon,
 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
 
+import { redrawCvAction } from "@/app/(app)/cvs/actions";
 import { PdfPreview } from "@/components/documents/pdf-preview";
 import { FlagList } from "@/components/jobs/kit-documents";
 import { LocalDate } from "@/components/jobs/local-date";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { callAction } from "@/lib/call-action";
 import type { BuiltCvDetail } from "@/lib/dal/cvs";
-import { builtCvQuery } from "@/lib/cvs/queries";
+import { builtCvQuery, cvListQuery } from "@/lib/cvs/queries";
 import { isBuildActive, type BuiltCvStatus } from "@/lib/schemas/cv-builder";
+import type { CvTemplate } from "@/lib/schemas/cv-template";
 import { cn } from "@/lib/utils";
 
+import { DesignPicker } from "./design-picker";
 import { KeywordCoverage } from "./keyword-coverage";
-import { LENGTH_LABELS, SECTION_LABELS } from "./labels";
+import {
+  LENGTH_LABELS,
+  SECTION_LABELS,
+  TEMPLATE_LABELS,
+} from "./labels";
 
 // One built CV: its progress while Claude writes it, then the PDF with the
 // ATS check beside it. The page prefetches it; this polls GET /api/cvs/[id]
@@ -83,11 +93,14 @@ export function BuiltCvView({ id }: { id: string }) {
             {cv.status === "ready" ? (
               <Link
                 href={`/cvs/edit?cv=${cv.id}`}
-                className={cn(buttonVariants({ size: "sm" }))}
+                className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
               >
                 <PencilIcon aria-hidden data-icon="inline-start" />
                 Edit
               </Link>
+            ) : null}
+            {cv.status === "ready" && cv.pdfUrl ? (
+              <Downloads id={cv.id} pdfUrl={cv.pdfUrl} />
             ) : null}
           </div>
         </div>
@@ -112,11 +125,17 @@ export function BuiltCvView({ id }: { id: string }) {
           <PdfPreview url={cv.pdfUrl} title={cv.request.targetTitle} />
           <aside className="flex min-w-0 flex-col gap-4">
             <AtsCheck cv={cv} />
+            <Design cv={cv} />
             {cv.edited ? null : <Asked cv={cv} />}
           </aside>
         </div>
       ) : isBuildActive(cv) ? (
-        <BuildProgress status={cv.status} edited={cv.edited} />
+        <BuildProgress
+          status={cv.status}
+          // Drawn again in another design, or edited: only the PDF is left.
+          drawOnly={cv.edited || cv.readyAt !== null}
+          template={cv.request.template}
+        />
       ) : null}
     </div>
   );
@@ -124,14 +143,18 @@ export function BuiltCvView({ id }: { id: string }) {
 
 function BuildProgress({
   status,
-  edited,
+  drawOnly,
+  template,
 }: {
   status: BuiltCvStatus;
-  /** An edited CV is written already: only its PDF is drawn. */
-  edited: boolean;
+  /** An edited CV, or one drawn again, is written already: only its PDF is drawn. */
+  drawOnly: boolean;
+  template: CvTemplate;
 }) {
   const current = STEPS.indexOf(status as (typeof STEPS)[number]);
-  const steps = edited ? STEPS.filter((step) => step === "rendering") : STEPS;
+  const steps = drawOnly
+    ? STEPS.filter((step) => step === "rendering")
+    : STEPS;
   return (
     <section
       aria-labelledby="progress-heading"
@@ -141,17 +164,19 @@ function BuildProgress({
         <Spinner aria-hidden className="mt-1 size-5 text-primary" />
         <div className="flex flex-col gap-1">
           <h2 id="progress-heading" className="font-semibold">
-            Building your CV
+            {drawOnly
+              ? `Drawing your CV in ${TEMPLATE_LABELS[template].title}`
+              : "Building your CV"}
           </h2>
           <p className="text-sm text-muted-foreground">
-            It takes {edited ? "a few seconds" : "about a minute"}. You can
+            It takes {drawOnly ? "a few seconds" : "about a minute"}. You can
             leave this page; the CV is saved on the CVs page when it&apos;s
             done.
           </p>
         </div>
       </div>
       <ol
-        className={cn("grid gap-2", !edited && "sm:grid-cols-3")}
+        className={cn("grid gap-2", !drawOnly && "sm:grid-cols-3")}
         aria-label="Steps"
       >
         {steps.map((step) => {
@@ -285,10 +310,89 @@ function AtsCheck({ cv }: { cv: BuiltCvDetail }) {
   );
 }
 
+/** The PDF the page shows, and the same CV as a Word file. */
+function Downloads({ id, pdfUrl }: { id: string; pdfUrl: string }) {
+  // Links, not buttons: they download files.
+  return (
+    <>
+      <a href={pdfUrl} download className={cn(buttonVariants({ size: "sm" }))}>
+        <DownloadIcon aria-hidden data-icon="inline-start" />
+        PDF
+      </a>
+      <a
+        href={`/api/cvs/${id}/docx`}
+        download
+        className={cn(buttonVariants({ size: "sm" }))}
+      >
+        <DownloadIcon aria-hidden data-icon="inline-start" />
+        Word
+      </a>
+    </>
+  );
+}
+
+/**
+ * The design it's drawn in. Picking another draws the same CV again in a few
+ * seconds, with no Claude call.
+ */
+function Design({ cv }: { cv: BuiltCvDetail }) {
+  const queryClient = useQueryClient();
+  const [pending, setPending] = useState<CvTemplate | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const redraw = async (template: CvTemplate) => {
+    if (pending || template === cv.request.template) return;
+    setError(null);
+    setPending(template);
+    const result = await callAction(() =>
+      redrawCvAction({ id: cv.id, template }),
+    );
+    if (!result.ok) {
+      setError(result.errors.formErrors[0] ?? "Couldn't change the design.");
+    }
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: builtCvQuery(cv.id).queryKey }),
+      queryClient.invalidateQueries({
+        queryKey: cvListQuery().queryKey,
+        exact: true,
+      }),
+    ]);
+    setPending(null);
+  };
+
+  return (
+    <Card title="Design">
+      <p id="design-note" className="text-sm text-muted-foreground">
+        Pick another and the same CV is drawn again in a few seconds, free.
+      </p>
+      <DesignPicker
+        id="redraw"
+        name="template"
+        value={pending ?? cv.request.template}
+        onChange={redraw}
+        disabled={pending !== null}
+        describedBy="design-note"
+        compact
+      />
+      <p role="status" aria-live="polite" className="text-sm">
+        {error ? (
+          <span className="text-destructive">{error}</span>
+        ) : pending ? (
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <Spinner aria-hidden />
+            Drawing it in {TEMPLATE_LABELS[pending].title}…
+          </span>
+        ) : null}
+      </p>
+    </Card>
+  );
+}
+
 /** The builder's form as it was sent. */
 function Asked({ cv }: { cv: BuiltCvDetail }) {
   const { request } = cv;
   const rows: [string, React.ReactNode][] = [
+    ["Design", TEMPLATE_LABELS[request.template].title],
     ["Length", LENGTH_LABELS[request.length].title],
     [
       "Sections",

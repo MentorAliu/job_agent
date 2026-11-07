@@ -17,6 +17,7 @@ import {
   type RunStage,
   type RunStats,
   type RunStatus,
+  type RunTrigger,
 } from "@/lib/schemas/job";
 import {
   preferencesSchema,
@@ -101,7 +102,10 @@ export type CreateRunResult =
   | { kind: "created"; runId: string }
   /** A run is already going; no second one starts. */
   | { kind: "active"; runId: string }
-  /** The search can't run yet. A scheduled run records why as a stopped run. */
+  /**
+   * The search can't run yet. A run the owner didn't start themselves (the
+   * daily one, or one after a profile change) records why as a stopped run.
+   */
   | ({ kind: "blocked"; runId: string | null } & SearchBlock);
 
 /** Why a search can't start: something to save first, or the budget. */
@@ -147,9 +151,7 @@ export async function checkSearchBlock(): Promise<SearchBlock | null> {
  * Starts a run unless one is going, the owner hasn't saved what the search
  * needs, or this month's budget is spent. The caller sends the Inngest event.
  */
-export async function createRun(
-  trigger: "manual" | "scheduled",
-): Promise<CreateRunResult> {
+export async function createRun(trigger: RunTrigger): Promise<CreateRunResult> {
   const block = await checkSearchBlock();
 
   return db.transaction(async (tx) => {
@@ -196,7 +198,7 @@ export async function createRun(
 
 export async function getRunStatus(
   runId: string,
-): Promise<{ status: RunStatus; trigger: "manual" | "scheduled" } | null> {
+): Promise<{ status: RunStatus; trigger: RunTrigger } | null> {
   const [row] = await db
     .select({ status: run.status, trigger: run.trigger })
     .from(run)

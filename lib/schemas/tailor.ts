@@ -4,6 +4,8 @@
 // jsonb columns and the Server Actions.
 import { z } from "zod";
 
+import { cvTemplateSchema } from "./cv-template";
+
 // ---------------------------------------------------------------------------
 // Documents
 // ---------------------------------------------------------------------------
@@ -147,6 +149,11 @@ export const cvContentSchema = z.object({
    * section the profile has is shown.
    */
   sections: z.array(z.enum(CV_SECTIONS)).optional(),
+  /**
+   * The design a tailored CV is drawn in, when the owner picked one in the
+   * editor. Settings' design otherwise.
+   */
+  template: cvTemplateSchema.optional(),
 });
 
 export const coverLetterContentSchema = z.object({

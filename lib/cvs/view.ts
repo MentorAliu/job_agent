@@ -25,8 +25,12 @@ export function builtCvView(
   };
 }
 
-/** "Jordan Sample - CV - Senior Frontend Engineer.pdf" */
-export function builtCvFilename(name: string, targetTitle: string): string {
+/** "Jordan Sample - CV - Senior Frontend Engineer.pdf", or ".docx". */
+export function builtCvFilename(
+  name: string,
+  targetTitle: string,
+  extension: "pdf" | "docx" = "pdf",
+): string {
   const parts = [name, "CV", targetTitle]
     .map((part) =>
       part
@@ -35,5 +39,5 @@ export function builtCvFilename(name: string, targetTitle: string): string {
         .trim(),
     )
     .filter(Boolean);
-  return `${parts.join(" - ")}.pdf`;
+  return `${parts.join(" - ")}.${extension}`;
 }

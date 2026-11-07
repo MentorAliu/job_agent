@@ -28,6 +28,7 @@ vi.mock("./budget", async () => ({
 
 const { tailorDocuments, TailorError, MAX_POSTING_CHARS } =
   await import("./tailor");
+const { CV_WRITING_RULES } = await import("./cv-writing");
 
 const JOB_ID = "5a1f3b2c-8d7e-4f60-9a1b-2c3d4e5f6a7b";
 const profile: MasterProfile = masterProfileSchema.parse(profileJson);
@@ -107,6 +108,9 @@ describe("tailorDocuments (step 8) with a recorded Claude response", () => {
     }[];
     expect(system).toHaveLength(2);
     expect(system[0].text).toMatch(/never add a skill/);
+    // Kit CVs are worded like the CV builder's.
+    expect(system[0].text).toMatch(/^You tailor a candidate's/);
+    expect(system[0].text).toContain(CV_WRITING_RULES);
     expect(system[1]).toEqual({
       type: "text",
       text: profileText,

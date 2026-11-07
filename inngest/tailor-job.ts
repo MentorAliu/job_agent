@@ -10,7 +10,13 @@ import { companySnapshot } from "@/lib/claude/company-snapshot";
 import { TailorError, tailorDocuments } from "@/lib/claude/tailor";
 import { backedKeywords, postingKeywords } from "@/lib/cvs/keywords";
 import { renderCvPdf, renderLetterPdf } from "@/lib/documents/pdf";
-import { cvView, documentText, letterView } from "@/lib/documents/view";
+import {
+  cvView,
+  documentText,
+  letterDate,
+  letterView,
+} from "@/lib/documents/view";
+import { readSettings } from "@/lib/pipeline/settings";
 import { readOwnerTimeZone } from "@/lib/pipeline/setup";
 import {
   failTailoring,
@@ -352,33 +358,30 @@ export async function markUnchecked(
   }
 }
 
-/** "18 October 2026", in the owner's time zone. */
-export function letterDate(timeZone: string, at: Date = new Date()): string {
-  return new Intl.DateTimeFormat("en-GB", {
-    timeZone,
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(at);
-}
-
 /**
  * Step 10: renders the CV and cover letter PDFs, then makes the documents
  * the apply kit's latest and moves a shortlisted role to Ready. The links
- * at the top are the owner's as saved now, standard answers first.
+ * at the top are the owner's as saved now, standard answers first. Both
+ * are drawn in the design set in Settings, unless the owner picked another
+ * for the CV in the editor; the letter then matches it.
  */
 export async function renderStep(
   jobId: string,
   requestId: string,
   saved: SavedDocument[],
 ): Promise<void> {
-  const [role, inputs, timeZone] = await Promise.all([
+  const [role, inputs, timeZone, settings] = await Promise.all([
     getTailorJob(jobId),
     getTailorInputs(),
     readOwnerTimeZone(),
+    readSettings(),
   ]);
   if (!role) throw new NonRetriableError(`No role with id ${jobId}.`);
   const docs = await getDocuments(saved.map((doc) => doc.id));
+  const picked = docs.find((doc) => doc.content.kind === "cv")?.content;
+  const template =
+    (picked?.kind === "cv" ? picked.template : undefined) ??
+    settings.cvTemplate;
   for (const doc of docs) {
     if (doc.content.kind === "answers") continue;
     const profile = await getSnapshotProfile(doc.snapshotId);
@@ -386,7 +389,10 @@ export async function renderStep(
     const links = ownerLinks(profile.links, inputs?.answers?.links ?? null);
     const bytes =
       doc.content.kind === "cv"
-        ? await renderCvPdf(cvView(doc.content, doc.claimFlags, profile, links))
+        ? await renderCvPdf(
+            cvView(doc.content, doc.claimFlags, profile, links),
+            template,
+          )
         : await renderLetterPdf(
             letterView(
               doc.content,
@@ -396,6 +402,7 @@ export async function renderStep(
               links,
             ),
             letterDate(timeZone),
+            template,
           );
     await saveDocumentPdf(
       jobId,

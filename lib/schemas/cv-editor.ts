@@ -7,6 +7,7 @@
 import { z } from "zod";
 
 import { CV_LENGTHS, TARGET_TITLE_MAX } from "./cv-builder";
+import { cvTemplateSchema } from "./cv-template";
 import { factIdSchema } from "./profile";
 
 /** Where an edit starts. */
@@ -72,6 +73,7 @@ export const cvEditFormSchema = z.object({
       "Pick each section once.",
     ),
   length: z.enum(CV_LENGTHS),
+  template: cvTemplateSchema,
 });
 
 export type CvEditForm = z.infer<typeof cvEditFormSchema>;

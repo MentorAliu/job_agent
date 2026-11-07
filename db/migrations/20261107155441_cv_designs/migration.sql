@@ -1,0 +1,1 @@
+ALTER TABLE "settings" ADD COLUMN "cv_template" text;

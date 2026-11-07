@@ -4,6 +4,7 @@
 // lines that are already there, and each still cites its profile facts.
 import { formatDateRange, cvView, type CvView } from "@/lib/documents/view";
 import type { CvLength } from "@/lib/schemas/cv-builder";
+import type { CvTemplate } from "@/lib/schemas/cv-template";
 import {
   EDIT_SKILLS_MAX,
   EDITOR_SECTIONS,
@@ -63,6 +64,8 @@ export type EditFrom = {
   sections: CvSection[] | null;
   /** Null for a CV that isn't fitted to a length, such as a kit's. */
   length: CvLength | null;
+  /** Null when it's drawn in the design set in Settings, as a kit's CV is. */
+  template: CvTemplate | null;
 };
 
 /** The owner's edit can't be saved as sent. */
@@ -203,6 +206,8 @@ function shownSummary(from: EditFrom | null): CitedText | null {
 export function editorStart(
   profile: MasterProfile,
   from: EditFrom | null,
+  /** The design set in Settings, for a CV that doesn't name its own. */
+  template: CvTemplate,
 ): { form: CvEditForm; catalogue: EditorCatalogue } {
   const facts = factIndex(profileFacts(profile, null));
   const { roles, projects } = profileEntries(profile);
@@ -253,6 +258,7 @@ export function editorStart(
         })),
         sections: filledSections(profile),
         length: defaultLength(profile),
+        template,
       },
     };
   }
@@ -287,6 +293,7 @@ export function editorStart(
       })),
       sections: filledSections(profile).filter(kept),
       length: from.length ?? defaultLength(profile),
+      template: from.template ?? template,
     },
   };
 }
@@ -302,7 +309,7 @@ export function editedContent(
   from: EditFrom | null,
 ): { content: CvContent; flags: ClaimFlag[] } {
   const facts = factIndex(profileFacts(profile, null));
-  const { catalogue } = editorStart(profile, from);
+  const { catalogue } = editorStart(profile, from, form.template);
   const { roles, projects } = profileEntries(profile);
   const labels = new Map(
     [...roles, ...projects].map((entry) => [entry.id, entry.label]),
@@ -390,6 +397,7 @@ export function editedContent(
       skillIds,
       headline: form.title.trim(),
       sections,
+      template: form.template,
     },
     flags,
   };

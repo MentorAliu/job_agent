@@ -14,6 +14,7 @@ import {
   useServerSubmit,
 } from "@/components/form-fields";
 import { SaveBar } from "@/components/profile/save-bar";
+import { DesignPicker } from "@/components/cvs/design-picker";
 import { BudgetMeter } from "@/components/runs/budget-meter";
 import { formatBudget, formatCost } from "@/components/runs/run-labels";
 import {
@@ -26,6 +27,8 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
+  FieldLegend,
+  FieldSet,
 } from "@/components/ui/field";
 import { Switch } from "@/components/ui/switch";
 import type { SettingsView } from "@/lib/dal/settings";
@@ -207,6 +210,35 @@ export function SettingsForm({
                 limitUsd={limitUsd}
               />
             </div>
+          </SettingsCard>
+
+          <SettingsCard
+            title="CV design"
+            description="The design apply kits draw your CV and cover letter in, and the first choice when you build a CV. Each is one column an applicant tracking system reads in order."
+          >
+            <Controller
+              control={control}
+              name="cvTemplate"
+              render={({ field, fieldState }) => (
+                <FieldSet data-invalid={fieldState.invalid || undefined}>
+                  <FieldLegend className="sr-only">CV design</FieldLegend>
+                  <DesignPicker
+                    id="cv-design"
+                    name={field.name}
+                    value={field.value}
+                    onChange={field.onChange}
+                    invalid={fieldState.invalid}
+                  />
+                  <FieldDescription>
+                    Kits written from now on use it. To change one CV, open it
+                    on the CVs page.
+                  </FieldDescription>
+                  {fieldState.invalid ? (
+                    <FieldError errors={errorList(fieldState.error)} />
+                  ) : null}
+                </FieldSet>
+              )}
+            />
           </SettingsCard>
         </div>
 

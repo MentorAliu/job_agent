@@ -1,5 +1,7 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type {
@@ -167,6 +169,21 @@ export function profileContext(
     ...focusRules(preferences.roleFocus),
   );
   return lines.join("\n");
+}
+
+/**
+ * A short fingerprint of everything a score reads about the candidate: the
+ * profile block above. When it changes, the roles scored against the old
+ * one are scored again (lib/pipeline/rescore.ts); a change scoring doesn't
+ * read, such as contact details or the countries, leaves it as it was.
+ */
+export function scoringKey(
+  profile: MasterProfile,
+  preferences: Preferences,
+): string {
+  return createHash("sha256")
+    .update(profileContext(profile, preferences))
+    .digest("hex");
 }
 
 /** One posting as the user turn of a score request. */

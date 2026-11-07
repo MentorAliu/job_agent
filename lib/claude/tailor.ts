@@ -15,6 +15,7 @@ import {
 
 import { estimateUsd } from "./budget";
 import { getAnthropic } from "./client";
+import { CV_WRITING_RULES } from "./cv-writing";
 import { getStageSetup } from "./llm-call";
 import { sendRequest } from "./send";
 import { minimalThinking } from "./thinking";
@@ -28,8 +29,8 @@ export const TAILOR_SYSTEM_PROMPT = `You tailor a candidate's application for on
 Rules:
 - Use only the facts in the candidate profile. Reword, reorder, shorten and leave out, but never add a skill, technology, number, title, employer, date, responsibility or result that the facts you cite don't state. When the posting asks for something the profile doesn't show, leave it out rather than stretch a fact.
 - Every summary, bullet, paragraph and answer lists in "sources" the ids of the facts it is based on. A bullet under a role cites that role or its highlights.
-- CV: one experience entry for every role in the profile, in its order, with the highlights that matter most for the posting first. Keep each bullet to one or two lines and keep the candidate's numbers exact. List the skills the posting cares about first.
-- CV wording: start each bullet with a strong action verb (present tense for the current role, past tense for the others) and say what the candidate did and its result or scale, with no "responsible for". No clichés such as "passionate", "results-driven" or "team player". Plain text only: no emoji, symbols or markdown.
+- CV: one experience entry for every role in the profile, in its order, with the highlights that matter most for the posting first. Keep each bullet to one or two lines and keep the candidate's numbers exact. List the skills the posting cares about first. Plain text only: no emoji, symbols or markdown.
+${CV_WRITING_RULES}
 - Keywords: applicant tracking systems match the posting's own words. Where a fact you cite backs a term the posting uses, write it the way the posting does, such as "Next.js" or "CI/CD". Work in the keywords listed with the posting wherever the facts you cite state them; never add one they don't.
 - Cover letter: 3 or 4 short paragraphs, under 300 words in all, in the first person. Plain and specific: connect the candidate's facts to what the posting asks for. No greeting or sign-off, which the app adds, and no stock phrases such as "I am thrilled to apply".
 - Answers: 3 to 6 questions this application is likely to ask, starting with any the posting asks itself. Answer briefly, in the first person. When the profile doesn't hold the answer, such as a notice period, a salary expectation or a work permit, leave the answer empty and say in "missing" what the candidate needs to add.

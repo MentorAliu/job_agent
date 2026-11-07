@@ -1,10 +1,12 @@
-// App settings. The owner sets the daily search, the monthly budget and what
-// the agents run on, kept in the one `settings` row, and their time zone,
-// kept with first-run setup. The models, search domains and per-run budget
+// App settings. The owner sets the daily search, the monthly budget, what
+// the agents run on and the CV design, kept in the one `settings` row, and
+// their time zone, kept with first-run setup. The models, search domains and per-run budget
 // are fixed here, so there's nothing else to tune.
 import { z } from "zod";
 
 import { timeZoneName } from "@/lib/jobs/today";
+
+import { cvTemplateSchema } from "./cv-template";
 
 /** Pipeline stages that call Claude. Matches the `llm_stage` enum. */
 export const LLM_STAGES = [
@@ -319,6 +321,7 @@ export const timeZoneSchema = z
  * What the Settings page saves. A budget of 0 stops every paid API call, to
  * Claude or OpenAI; steps on a plan's command-line agent still run. The time
  * zone sets when the morning runs start and when the owner's day turns over.
+ * The CV design is the one apply kits are drawn in.
  */
 export const settingsInputSchema = z.object({
   dailyRunEnabled: z.boolean(),
@@ -328,12 +331,17 @@ export const settingsInputSchema = z.object({
     .max(1000, "Use at most $1000."),
   agentEngine: z.enum(AGENT_ENGINES, { error: "Pick what the agents run on." }),
   timeZone: timeZoneSchema,
+  cvTemplate: cvTemplateSchema,
 });
 
 export type SettingsInput = z.infer<typeof settingsInputSchema>;
 
-/** The part of Settings kept in the `settings` row. */
-export type SettingsRowInput = Omit<SettingsInput, "timeZone">;
+/**
+ * The part of Settings kept in the `settings` row. Setup saves the row
+ * before the owner has picked a CV design, so it leaves that unset.
+ */
+export type SettingsRowInput = Omit<SettingsInput, "timeZone" | "cvTemplate"> &
+  Partial<Pick<SettingsInput, "cvTemplate">>;
 
 /**
  * Codex's sign-in file, `~/.codex/auth.json`, as the owner pastes it. Codex

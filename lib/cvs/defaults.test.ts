@@ -14,7 +14,7 @@ describe("defaultCvForm", () => {
       ...samplePreferences,
       // Go isn't in the profile, so it's not offered.
       stack: ["typescript", "React", "Go", "Next.js"],
-    });
+    }, "minimal");
     expect(form).toEqual({
       targetTitle: "Senior Frontend Engineer",
       jobText: "",
@@ -22,6 +22,7 @@ describe("defaultCvForm", () => {
       length: "one_page",
       sections: ["projects", "education", "certifications", "languages"],
       note: "",
+      template: "minimal",
     });
   });
 
@@ -34,6 +35,7 @@ describe("defaultCvForm", () => {
         languages: [],
       },
       null,
+      "modern",
     );
     expect(form.targetTitle).toBe("Senior Frontend Engineer");
     expect(form.skills).toEqual(
@@ -50,6 +52,7 @@ describe("defaultCvForm", () => {
         experience: [...profile.experience, { ...role, id: "role_99999990" }],
       },
       null,
+      "modern",
     );
     expect(form.length).toBe("two_pages");
   });
@@ -95,6 +98,24 @@ describe("formFromRequest", () => {
       length: "two_pages",
       sections: ["education"],
       note: "Stress mentoring.",
+      // Built before designs existed, so drawn in the first one.
+      template: "classic",
     });
+  });
+
+  it("keeps the design the CV was built in", () => {
+    const form = formFromRequest(
+      {
+        targetTitle: "Frontend Lead",
+        jobText: "",
+        skillIds: [],
+        length: "one_page",
+        sections: [],
+        note: "",
+        template: "executive",
+      },
+      profile,
+    );
+    expect(form.template).toBe("executive");
   });
 });

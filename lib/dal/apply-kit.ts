@@ -19,10 +19,12 @@ import {
   skillsForKeywords,
   type KeywordMatch,
 } from "@/lib/cvs/keywords";
+import { renderCvDocx, renderLetterDocx } from "@/lib/documents/docx";
 import {
   answersView,
   cvDiff,
   cvView,
+  letterDate,
   letterText,
   letterView,
   withSavedAnswers,
@@ -31,6 +33,8 @@ import {
   type CvView,
   type LetterView,
 } from "@/lib/documents/view";
+import { readSettings } from "@/lib/pipeline/settings";
+import { readOwnerTimeZone } from "@/lib/pipeline/setup";
 import { getStorage } from "@/lib/storage";
 import {
   answersSchema,
@@ -571,5 +575,57 @@ export async function getDocumentPdf(
     filename: `${[row.name, FILE_KINDS[row.kind], row.company]
       .filter(Boolean)
       .join(" - ")} v${row.version}.pdf`,
+  };
+}
+
+/**
+ * A tailored CV or cover letter as a Word file, made from the same content
+ * and links as its PDF, in its design. The letter keeps the date it was
+ * written. Null for answers, or a document that isn't ready.
+ */
+export async function getDocumentDocx(
+  documentId: string,
+): Promise<{ bytes: Uint8Array<ArrayBuffer>; filename: string } | null> {
+  await getCurrentUser();
+  const [row] = await db
+    .select({
+      content: document.content,
+      claimFlags: document.claimFlags,
+      headerLinks: document.headerLinks,
+      version: document.version,
+      readyAt: document.readyAt,
+      company: job.company,
+      profile: profileSnapshot.profileData,
+    })
+    .from(document)
+    .innerJoin(job, eq(job.id, document.jobId))
+    .innerJoin(profileSnapshot, eq(profileSnapshot.id, document.snapshotId))
+    .where(and(eq(document.id, documentId), isNotNull(document.readyAt)));
+  if (!row || row.content.kind === "answers") return null;
+  const [settings, timeZone] = await Promise.all([
+    readSettings(),
+    readOwnerTimeZone(),
+  ]);
+  const links = row.headerLinks ?? undefined;
+  const filename = (kind: DocumentKind) =>
+    `${[row.profile.basics.name, FILE_KINDS[kind], row.company]
+      .filter(Boolean)
+      .join(" - ")} v${row.version}.docx`;
+  if (row.content.kind === "cv") {
+    return {
+      bytes: await renderCvDocx(
+        cvView(row.content, row.claimFlags, row.profile, links),
+        row.content.template ?? settings.cvTemplate,
+      ),
+      filename: filename("cv"),
+    };
+  }
+  return {
+    bytes: await renderLetterDocx(
+      letterView(row.content, row.claimFlags, row.profile, row.company, links),
+      letterDate(timeZone, row.readyAt ?? new Date()),
+      settings.cvTemplate,
+    ),
+    filename: filename("cover_letter"),
   };
 }

@@ -17,6 +17,7 @@ const valid: SettingsInput = {
   monthlyBudgetUsd: 20,
   agentEngine: "claude_api",
   timeZone: "Europe/Belgrade",
+  cvTemplate: "modern",
 };
 
 describe("settingsInputSchema", () => {

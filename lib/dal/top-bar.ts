@@ -102,7 +102,11 @@ async function readWork(now: Date) {
       .from(job)
       .where(sql`${job.tailoring}->>'status' in ('queued', 'running')`),
     db
-      .select({ status: builtCv.status, createdAt: builtCv.createdAt })
+      .select({
+        status: builtCv.status,
+        createdAt: builtCv.createdAt,
+        updatedAt: builtCv.updatedAt,
+      })
       .from(builtCv)
       .where(notInArray(builtCv.status, ["ready", "failed"])),
     db

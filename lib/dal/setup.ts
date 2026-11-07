@@ -272,9 +272,14 @@ export async function unconfirmSetupCv(): Promise<void> {
  */
 export async function createSetupAtsCv(): Promise<{ id: string }> {
   await getCurrentUser();
-  const { data, preferences } = await readProfileRow();
+  const [{ data, preferences }, { cvTemplate }] = await Promise.all([
+    readProfileRow(),
+    readSettings(),
+  ]);
   if (!data) throw new NoProfileError();
-  const { id } = await createBuiltCv(defaultCvForm(data, preferences));
+  const { id } = await createBuiltCv(
+    defaultCvForm(data, preferences, cvTemplate),
+  );
   await writeSetupRow({ atsCvId: id });
   return { id };
 }

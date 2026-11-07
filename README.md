@@ -29,11 +29,11 @@ Under the hood it's a set of small, single-purpose AI agents orchestrated as dur
 - **Takes roles you find.** Paste a posting's link on Roles, with its text for a site apps can't read such as LinkedIn, and it's read, checked and scored like the rest, and gets its kit straight away.
 - **Checks you can take them.** It reads each posting's location and time zone rules and only trusts a rule it can find word for word on the page, so a role closed to your country is ruled out. With remote only, which setup turns on, hybrid and on-site roles are left out too.
 - **Scores the rest** from 0 to 100 against your profile, with the reasons and the gaps. The kind of role you want most (frontend, full-stack, backend or mobile) counts most: a role of that kind stays a strong match even in a framework you haven't used, and everyday tools such as Vite or Docker never count as gaps.
-- **Prepares apply kits by itself** for up to 3 roles a day that score 75 or more, the kind you want most and the freshest postings first: a tailored CV and cover letter as PDFs, and answers to the form's questions. Every line cites the fact in your profile it comes from, and a two-stage check leaves out anything the profile doesn't back.
+- **Prepares apply kits by itself** for up to 3 roles a day that score 75 or more, the kind you want most and the freshest postings first: a tailored CV and cover letter as PDFs and Word files, in the CV design you chose, and answers to the form's questions. Every line cites the fact in your profile it comes from, and a two-stage check leaves out anything the profile doesn't back.
 - **Fills application forms** with a Chrome extension: your details, links, standard answers, the kit's answers and the PDFs. You check the form and press Submit, and the role moves to Applied.
 - **Keeps the conversation going.** Paste an employer's email and the role moves on by itself (an interview invite to Interviewing, a rejection to Rejected), with a summary and a suggested reply to copy.
 - **Tidies up after itself.** Roles whose listing closed move to Listing closed before you spend time on them, and applications with no answer for 30 days move to No response.
-- **Builds CVs** from your profile on request, aimed at a job title or a pasted posting, with an applicant tracking system (ATS) check, and lets you edit any CV into a new one.
+- **Builds CVs** from your profile on request, aimed at a job title or a pasted posting, in one of four designs that applicant tracking systems (ATS) read cleanly, with an ATS check. Any CV can be edited into a new one, drawn again in another design, and downloaded as a PDF or a Word file.
 
 ## What it costs
 
@@ -294,8 +294,8 @@ While a kit is being written, it shows each stage: **Researching the company**, 
 
 The kit has tabs:
 
-- **CV:** the tailored CV, or **Changes from your CV** to see what changed. **ATS keywords** shows which of the posting's terms the CV uses, and **Add to CV** puts skills from your profile that match a missing keyword on a new version, with no AI call. **Edit** opens the CV editor, **View PDF** opens it in the app, and **Download PDF** saves it.
-- **Cover letter**, with **Copy letter**.
+- **CV:** the tailored CV, or **Changes from your CV** to see what changed. **ATS keywords** shows which of the posting's terms the CV uses, and **Add to CV** puts skills from your profile that match a missing keyword on a new version, with no AI call. **Edit** opens the CV editor, **View PDF** opens it in the app, **Download PDF** saves it, and **Word** saves it as a Word file in the same design.
+- **Cover letter**, with **Copy letter**, and the same PDF and Word buttons.
 - **Answers** to the questions the application is likely to ask, with **Copy all**. A question your profile can't answer, such as a salary expectation, is marked for you to answer: type it in and **Save answer** to keep it in your standard answers for the next kits.
 - **Your details**, as forms ask for them, and **About** plus the company's name: a short brief from a web search, with red flags such as layoffs or unpaid test projects when it found any.
 
@@ -341,6 +341,8 @@ Your uploaded CV and every CV made for you, as cards showing each CV's first pag
 
 **Build with Claude** writes a new CV from your profile: give it a job title, and if you like a job posting to match, the skills to lead with, one or two pages, the sections to include and a note. It's checked line by line against your profile like a kit's CV, fitted to the length you asked for (older bullets go first), and shown with an **ATS check**: layout, length, claims and the posting's keywords. **New CV** opens the editor with everything in your profile: remove lines, change the order, add back any line, and save it as a new CV, with no AI call. **Edit** on a card starts the editor from that CV: a General CV is saved as a new CV, and a kit's CV as the kit's next version, which the kit then sends.
 
+**Designs:** every CV comes in one of four designs: **Modern** (a dark header band), **Classic** (blue headings), **Executive** (a serif and a centered header) and **Minimal** (plenty of white space). All four are one column of real text with standard headings, so applicant tracking systems read them in order. Pick one when you build a CV or in the editor; Settings sets the one apply kits use and the one the builder starts on. On a CV's page, **Design** draws it again in another design in a few seconds, with no AI call, and **PDF** and **Word** download it.
+
 ### Profile
 
 What the agents know about you, read from your CV:
@@ -348,6 +350,8 @@ What the agents know about you, read from your CV:
 - **About you**, **Experience** and **Skills and more:** read-only, with **Edit** links for corrections. Uploading a new CV replaces them.
 - **What the searches look for** (**Job preferences**): remote only, the countries and time zones you can work in, seniority, the kind of role you want most, your stack, companies to skip, and a salary floor.
 - **Standard answers:** your notice period, work authorization, LinkedIn, GitHub and portfolio, and any other question you answer the same way every time. Kits use them as they are, and new CVs and letters put the links at the top.
+
+**When your profile changes,** by a new CV, an edit, a skill the CV builder added, or a change to the kind of role, seniority, stack or salary floor in Job preferences, the app searches again 5 quiet minutes after your last save. That search first scores again, against the new profile, the roles waiting for a kit and the roles passed over for their score in the last 21 days (up to 40), then looks for new roles as every search does, and the auto-pick decides on all of them. A change scoring doesn't read, such as your email, links or countries, starts nothing. Kits already written stay as they are. With the daily search off, or after 3 such searches in a day, the next search you start or the morning one does the rescoring instead.
 
 ### Runs and spend
 
@@ -358,6 +362,7 @@ Open it from the search card in the sidebar, or from **Spent this month** on the
 - **Daily search:** turn the 07:00 search on or off, and set **Your time zone**. Setup took it from your computer; when your computer is on another time zone, Settings offers it with **Use it**. After you save, the morning runs happen at their times in the new time zone.
 - **Monthly budget:** the most the agents may spend a month on API calls, in US dollars. Steps on Claude Code or Codex don't count.
 - **Agents run on:** the four choices, their sign-ins and keys, **Check it works**, and how the agent has been doing.
+- **CV design:** the design apply kits draw your CV and cover letter in, and the one the CV builder starts on.
 - **Form filler:** the download and how to install it.
 - **Appearance:** light, dark or the system's theme, saved on this device.
 
@@ -416,14 +421,14 @@ flowchart TD
 | **Build a CV**        | Writes an ATS-friendly CV from your profile for a job title or a posting, and lists the posting's keywords                                                                                                                                               | Sonnet 5.5 (GPT-6.1 Sol)           | None                                                                                                                    | Yes, as citable facts                                                                     |
 | **Check provider**    | One tiny call that must answer `{"ok": true}` in its schema, to prove the engine works                                                                                                                                                                   | Haiku 5.5 (GPT-6 Luna)             | None                                                                                                                    | No                                                                                        |
 
-On Claude Code the same Claude models run; Codex uses your plan's own Codex model. Everything else is plain code: deduplication, the eligibility check, the company board watch, the boards' feeds, the listing check, the auto-pick, the status rules for emails, the PDFs and the form filling.
+On Claude Code the same Claude models run; Codex uses your plan's own Codex model. Everything else is plain code: deduplication, the eligibility check, the company board watch, the boards' feeds, the listing check, the auto-pick, the status rules for emails, the PDFs and Word files, and the form filling.
 
 ### What a search does, step by step
 
 `inngest/search-run.ts` runs one search as a chain of Inngest steps:
 
 1. **Start.** Checks your profile and preferences are saved, with at least one technology in your stack. Once the month's budget is spent, a search doesn't start at all: **Search now** says why, and the morning search is recorded as stopped, with the reason.
-2. **Re-check unsent roles.** Roles found earlier are checked against today's preferences: one that is now ruled out, such as a hybrid role after you turned remote only on, moves to Not eligible. Code only.
+2. **Re-check unsent roles.** Roles found earlier are checked against today's preferences: one that is now ruled out, such as a hybrid role after you turned remote only on, moves to Not eligible. Code only. Then, when what scoring reads changed since the roles were last scored (a hash of the profile block the score sees, kept in `profile.scoring_key`), `lib/pipeline/rescore.ts` clears the score of the roles waiting for a kit and of the roles passed over for their score in the last 21 days, up to 40, and moves the passed ones back to New with the reason on their timeline, so step 8 scores them with the new postings.
 3. **Watch company boards.** Up to 40 job boards of companies that already posted a role you can take are read through their public APIs, 8 at a time, with no AI call. Up to 10 of their new developer postings, the kind you want most first and none older than 21 days, go first in the reading list.
 4. **Read the boards' feeds.** `lib/jobs/feeds.ts` reads the feeds that Remote OK, We Work Remotely, Jobicy and Himalayas publish for apps, with no AI call: Remote OK's API, We Work Remotely's front-end and full-stack RSS, Jobicy's engineering jobs and a Himalayas search for the kind of role you want and your first technology, near your country. Each feed is asked at most once an hour, as Jobicy asks, and a later search in that hour uses what it answered. Developer roles by their title, open to your country as far as the board says and posted in the last 21 days, are kept, and up to 15 go in the reading list after the company boards. A feed's posting is read from the text the feed gave, so its page isn't fetched. As the boards' terms ask, each role links to its page on the board and applies through it, and the role page says which board it was found on. A board whose feed answered isn't searched again in that run.
 5. **Search.** Four search calls: one for each group of 4 job sites (Greenhouse, Lever, Ashby, Workable; SmartRecruiters, Recruitee, We Work Remotely, Remotive; Remote OK, Himalayas, Working Nomads, Landing.jobs), then one on the open web aimed at employers' careers pages and the hiring systems they use, with the job sites and the off-limits sites blocked. Each call makes up to 3 web searches. The search sees your criteria (stack, levels, countries, time zones, remote only, the kind of role), never your CV. The model returns links; code decides which are single postings, drops the ones already seen, and interleaves the groups so one site can't crowd out the others.
@@ -438,9 +443,9 @@ On Claude Code the same Claude models run; Codex uses your plan's own Codex mode
 `inngest/tailor-job.ts`, one run per role at a time:
 
 1. **Company snapshot,** on a role's first kit only. A brief that can't be written doesn't hold up the kit.
-2. **Write.** Your profile goes in as a list of facts, each with an id (a role, a bullet, a skill, a degree, a standard answer, your time zones). The model rewrites, reorders and leaves out, but must cite the ids of the facts behind every summary, bullet, paragraph and answer. The posting's keywords that your profile backs are listed for it, so applicant tracking systems find them. The instructions and your profile come first and are cached, and every kit uses the same output schema, so they stay cached.
+2. **Write.** Your profile goes in as a list of facts, each with an id (a role, a bullet, a skill, a degree, a standard answer, your time zones). The model rewrites, reorders and leaves out, but must cite the ids of the facts behind every summary, bullet, paragraph and answer. The posting's keywords that your profile backs are listed for it, so applicant tracking systems find them. Kits and the CV builder share one set of writing rules (`lib/claude/cv-writing.ts`): each bullet leads with the result, uses only the numbers your profile states, and starts with a precise verb. The instructions and your profile come first and are cached, and every kit uses the same output schema, so they stay cached.
 3. **Check claims,** in two stages. Code first (`lib/tailor/citations.ts`): a line that cites nothing, cites an id your profile doesn't have, or cites nothing from the role it sits under is flagged. Then a second model reads each remaining line with the facts it cites and writes its reason before its verdict, a line that only repeats a fact word for word skips the call, and an answer with an id it didn't ask about is ignored. Flagged lines never reach the PDFs or the copy buttons. If the check can't run, the kit is marked not double-checked rather than failed.
-4. **Draw the PDFs** of the CV and the letter with React-PDF, with your links at the top, then move the role to Ready.
+4. **Draw the PDFs** of the CV and the letter with React-PDF, in the CV design set in Settings (or the one picked in the editor for an edited CV), with your links at the top, then move the role to Ready.
 
 Steps return ids, never document text, so your CV and letters stay out of Inngest's step history.
 
@@ -448,7 +453,7 @@ Steps return ids, never document text, so your CV and letters stay out of Innges
 
 - **Reading an email** (`inngest/read-email.ts`): the agent gets the newest message and part of the thread quoted under it, your applications (just the one you pasted it into, the ones it names, or all of them), and the earlier emails on each with the replies you used. Code then checks its answer: the application ref must be one it was given, and its quote must be in the email, or the reading counts as unsure and moves nothing. The status change itself comes from `lib/mail/rules.ts`. Emails are read one at a time, so a second email on a role is read with the first one's summary.
 - **Reading a CV** (`inngest/parse-cv.ts`): a PDF is uploaded once to the Files API, so a retry doesn't upload it again; on a command-line agent its text is read with PDF.js instead. The profile is saved inside the step.
-- **Building a CV** (`inngest/build-cv.ts`): write, check claims as a kit does, then draw the PDF and drop bullets one at a time, oldest roles first, until it fits the pages asked for.
+- **Building a CV** (`inngest/build-cv.ts`): write, check claims as a kit does, then draw the PDF in the design asked for and drop bullets one at a time, oldest roles first, until it fits the pages asked for. Drawing a CV again in another design runs only this last step. Word files aren't stored: `lib/documents/docx.ts` writes one from the same content when you download it.
 - **Adding a role** (`inngest/add-role.ts`): the posting is read like a search's, from its page or from the text you pasted, then checked, stored as yours and scored in one request rather than a batch. A role you can take, not from an excluded company, is picked with its kit, and the auto-pick never passes over a role you added. A link the app already has isn't read again.
 - **Checking the provider** (`inngest/check-engine.ts`): one call on the chosen engine with no fallback and no retry, since the point is to know that engine works.
 
@@ -461,7 +466,8 @@ Every piece of long work runs in an Inngest function, never inside a web request
 | `morning-clock`    | A cron every 6 hours, and saving your time zone                             | Schedules the next 20 hours of morning runs as events with future timestamps         |
 | `check-listings`   | 06:30                                                                       | Moves closed listings to Listing closed, and dates undated roles                     |
 | `daily-search`     | 07:00                                                                       | Starts a search, unless setup isn't done, the daily search is off, or one is running |
-| `search-run`       | The daily search, or **Search now**                                         | The search above, then the auto-pick                                                 |
+| `search-run`       | The daily search, **Search now**, or a profile change                       | The search above, then the auto-pick                                                 |
+| `profile-changed`  | Saving a profile, CV or preferences change, debounced by 5 minutes          | Starts a search when scoring's input changed, at most 3 a day; waits for one running |
 | `tailor-job`       | A picked role, **Write the kit**, a CV edit, or the form filler's questions | The apply kit above                                                                  |
 | `read-email`       | A pasted email                                                              | Reads it and moves the role                                                          |
 | `mark-no-response` | 07:30                                                                       | Moves applications with no email for 30 days to No response                          |
@@ -541,6 +547,7 @@ flowchart LR
 | `lib/claude/budget.ts`, `cost.ts`, `llm-call.ts` | Budget checks, prices and the call log                                                                                                                                                                           |
 | `inngest/`                                       | The background functions and their events                                                                                                                                                                        |
 | `lib/jobs/`                                      | Eligibility, the auto-pick, company boards, the remote boards' feeds, listing checks, posting dates, safe page fetching                                                                                          |
+| `lib/documents/`                                 | The CV and letter designs: the PDFs (`pdf.tsx`) with the fonts they embed (`fonts/`), and the Word files (`docx.ts`)                                                                                             |
 | `lib/tailor/`                                    | Profile facts and the citation check                                                                                                                                                                             |
 | `lib/mail/`                                      | The status rules for emails, and tidying and matching their text                                                                                                                                                 |
 | `lib/schemas/`                                   | The Zod schemas every step, form and action shares                                                                                                                                                               |
@@ -649,4 +656,4 @@ Sandboxing isn't available on native Windows; there, the allow-list in `.claude/
 
 ## Security and licence
 
-To report a security problem, see [SECURITY.md](SECURITY.md). Job Agent is released under the [MIT licence](LICENSE).
+To report a security problem, see [SECURITY.md](SECURITY.md). Job Agent is released under the [MIT licence](LICENSE). The fonts the CV designs embed (Inter, Source Serif 4 and DM Sans) are under the SIL Open Font License, with their licences in `lib/documents/fonts/`.

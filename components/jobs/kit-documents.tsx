@@ -239,7 +239,7 @@ function DocumentMeta({
   );
 }
 
-/** View PDF, which opens it in the app, and Download PDF. */
+/** View PDF, which opens it in the app, Download PDF, and the Word file. */
 function PdfLinks({
   document,
   title,
@@ -267,6 +267,15 @@ function PdfLinks({
       >
         <DownloadIcon aria-hidden data-icon="inline-start" />
         Download PDF
+      </a>
+      <a
+        href={`/api/documents/${document.id}/docx`}
+        download
+        aria-label="Download as a Word file"
+        className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+      >
+        <DownloadIcon aria-hidden data-icon="inline-start" />
+        Word
       </a>
     </>
   );

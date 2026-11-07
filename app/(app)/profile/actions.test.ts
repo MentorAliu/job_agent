@@ -8,6 +8,7 @@ const saveProfileData = vi.fn(async () => ({ snapshotId: "snap-1" }));
 const savePreferences = vi.fn(async () => {});
 const saveAnswers = vi.fn(async () => {});
 const refresh = vi.fn();
+const sendProfileChanged = vi.fn(async () => {});
 
 class UnknownCvUploadError extends Error {}
 
@@ -18,6 +19,10 @@ vi.mock("@/lib/dal/profile", () => ({
   UnknownCvUploadError,
 }));
 vi.mock("next/cache", () => ({ refresh: () => refresh() }));
+vi.mock("@/inngest/send-profile-changed", () => ({
+  sendProfileChanged: (...args: unknown[]) =>
+    sendProfileChanged(...(args as [])),
+}));
 
 const { saveProfileAction, savePreferencesAction } = await import("./actions");
 
@@ -33,6 +38,7 @@ describe("saveProfileAction", () => {
   beforeEach(() => {
     saveProfileData.mockClear();
     refresh.mockClear();
+    sendProfileChanged.mockClear();
   });
 
   it("saves the reviewed profile with its CV upload, then refreshes", async () => {
@@ -42,6 +48,8 @@ describe("saveProfileAction", () => {
     expect(result).toEqual({ ok: true });
     expect(saveProfileData).toHaveBeenCalledWith(profile, CV_FILE_ID);
     expect(refresh).toHaveBeenCalledOnce();
+    // So the roles are scored again against the new profile.
+    expect(sendProfileChanged).toHaveBeenCalledWith("profile");
   });
 
   it("trims values before saving", async () => {
@@ -74,6 +82,7 @@ describe("saveProfileAction", () => {
     });
     expect(saveProfileData).not.toHaveBeenCalled();
     expect(refresh).not.toHaveBeenCalled();
+    expect(sendProfileChanged).not.toHaveBeenCalled();
   });
 
   it("rejects input that isn't a profile at all", async () => {
@@ -104,6 +113,19 @@ describe("saveProfileAction", () => {
 });
 
 describe("savePreferencesAction", () => {
+  beforeEach(() => {
+    savePreferences.mockClear();
+    sendProfileChanged.mockClear();
+  });
+
+  it("saves the preferences and says scoring's input may have changed", async () => {
+    expect(await savePreferencesAction(samplePreferences)).toEqual({
+      ok: true,
+    });
+    expect(savePreferences).toHaveBeenCalledWith(samplePreferences);
+    expect(sendProfileChanged).toHaveBeenCalledWith("preferences");
+  });
+
   it("returns the nested field's error", async () => {
     const result = await savePreferencesAction({
       ...samplePreferences,
@@ -117,5 +139,6 @@ describe("savePreferencesAction", () => {
       },
     });
     expect(savePreferences).not.toHaveBeenCalled();
+    expect(sendProfileChanged).not.toHaveBeenCalled();
   });
 });

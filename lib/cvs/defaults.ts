@@ -6,6 +6,10 @@ import type {
   CvSection,
 } from "@/lib/schemas/cv-builder";
 import {
+  LEGACY_CV_TEMPLATE,
+  type CvTemplate,
+} from "@/lib/schemas/cv-template";
+import {
   newFactId,
   type MasterProfile,
   type Preferences,
@@ -34,12 +38,13 @@ function filledSections(profile: MasterProfile): CvSection[] {
 /**
  * A new CV's form: the profile's headline as the target, the stack from the
  * job preferences as the skills to lead with (the profile's first skills
- * when none match), every section the profile has, and a length to suit
- * the career.
+ * when none match), every section the profile has, a length to suit the
+ * career, and the design set in Settings.
  */
 export function defaultCvForm(
   profile: MasterProfile,
   preferences: Preferences | null,
+  template: CvTemplate,
 ): CvBuildForm {
   const byKey = new Map(
     profile.skills.map((skill) => [skillKey(skill.name), skill.name]),
@@ -65,6 +70,7 @@ export function defaultCvForm(
         : "one_page",
     sections: filledSections(profile),
     note: "",
+    template,
   };
 }
 
@@ -74,9 +80,10 @@ export function formFromRequest(
   profile: MasterProfile,
 ): CvBuildForm {
   const names = new Map(profile.skills.map((skill) => [skill.id, skill.name]));
-  const { skillIds, ...rest } = request;
+  const { skillIds, template, ...rest } = request;
   return {
     ...rest,
+    template: template ?? LEGACY_CV_TEMPLATE,
     skills: skillIds.flatMap((id) => {
       const name = names.get(id);
       return name ? [name] : [];

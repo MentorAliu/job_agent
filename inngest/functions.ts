@@ -7,6 +7,7 @@ import { checkListings } from "./check-listings";
 import { morningClock } from "./clock";
 import { dailySearch } from "./daily-search";
 import { parseCv } from "./parse-cv";
+import { searchAfterProfileChange } from "./profile-changed";
 import { markNoResponse, readPastedEmail } from "./read-email";
 import { searchRun } from "./search-run";
 import { tailorJob } from "./tailor-job";
@@ -23,5 +24,6 @@ export const functions: InngestFunction.Any[] = [
   checkListings,
   checkEngineFunction,
   addRole,
+  searchAfterProfileChange,
   morningClock,
 ];

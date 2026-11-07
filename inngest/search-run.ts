@@ -71,6 +71,7 @@ import {
   saveFeedCheck,
 } from "@/lib/pipeline/feeds";
 import { getUnsentRoles, markNotEligible } from "@/lib/pipeline/listings";
+import { rescoreIfProfileChanged } from "@/lib/pipeline/rescore";
 import {
   endRun,
   getRunStatus,
@@ -149,6 +150,15 @@ export async function runSearch(
   const criteria = searchCriteria(preferences);
   // Roles found earlier meet today's rules before any are scored or picked.
   await step.run("recheck-roles", () => recheckStep(preferences));
+  // After a change to the profile or preferences that scoring reads, the
+  // waiting and recently passed roles are scored again with the new ones.
+  await step.run("rescore-roles", async () => {
+    const result = await rescoreIfProfileChanged();
+    if (result.rescored > 0) {
+      await setRunCounts(runId, { rescored: result.rescored });
+    }
+    return result;
+  });
 
   const stop = async (stopReason: string): Promise<SearchOutcome> => {
     await step.run("stop", () => endRun(runId, "stopped", stopReason));

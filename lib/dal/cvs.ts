@@ -22,6 +22,10 @@ import {
   type KeywordMatch,
 } from "@/lib/cvs/keywords";
 import { builtCvFilename, builtCvView } from "@/lib/cvs/view";
+import { renderCvDocx } from "@/lib/documents/docx";
+import { keepScoringBaseline } from "@/lib/pipeline/rescore";
+import { readSettings } from "@/lib/pipeline/settings";
+import { getTailorInputs } from "@/lib/pipeline/tailoring";
 import {
   LOST_BUILD_MESSAGE,
   shownBuildStatus,
@@ -29,9 +33,14 @@ import {
   type CvBuildForm,
   type CvBuildRequest,
 } from "@/lib/schemas/cv-builder";
+import {
+  LEGACY_CV_TEMPLATE,
+  type CvTemplate,
+} from "@/lib/schemas/cv-template";
 import { PDF_MIME } from "@/lib/schemas/cv-upload";
 import {
   masterProfileSchema,
+  ownerLinks,
   preferencesSchema,
   type MasterProfile,
 } from "@/lib/schemas/profile";
@@ -54,6 +63,8 @@ const LIST_LIMIT = 100;
 export type BuiltCvRow = {
   id: string;
   targetTitle: string;
+  /** The design it's drawn in. */
+  template: CvTemplate;
   /** Built to match a pasted job posting. */
   matched: boolean;
   /** The owner made it in the editor rather than Claude. */
@@ -62,6 +73,8 @@ export type BuiltCvRow = {
   pageCount: number | null;
   pdfUrl: string | null;
   createdAt: string;
+  /** Moves with each step, and when it's drawn again in another design. */
+  updatedAt: string;
 };
 
 export type TailoredCvRow = {
@@ -98,7 +111,13 @@ export type CvList = {
   tailored: TailoredCvRow[];
 };
 
-const builtPdfUrl = (id: string) => `/api/cvs/${id}/pdf`;
+/**
+ * The built CV's PDF, with the time it was drawn: drawing it again in
+ * another design keeps the CV's id and its file, so this is what tells the
+ * viewer, which caches each PDF by its address, to load the new one.
+ */
+const builtPdfUrl = (id: string, drawnAt: Date | null) =>
+  `/api/cvs/${id}/pdf${drawnAt ? `?v=${drawnAt.getTime()}` : ""}`;
 
 export async function listCvs(): Promise<CvList> {
   await getCurrentUser();
@@ -123,6 +142,8 @@ export async function listCvs(): Promise<CvList> {
         pageCount: builtCv.pageCount,
         pdfFileId: builtCv.pdfFileId,
         createdAt: builtCv.createdAt,
+        updatedAt: builtCv.updatedAt,
+        readyAt: builtCv.readyAt,
       })
       .from(builtCv)
       .orderBy(desc(builtCv.createdAt))
@@ -162,13 +183,17 @@ export async function listCvs(): Promise<CvList> {
       return {
         id: row.id,
         targetTitle: row.request.targetTitle,
+        template: row.request.template ?? LEGACY_CV_TEMPLATE,
         matched: row.request.jobText !== "",
         edited: row.edited,
         status,
         pageCount: row.pageCount,
         pdfUrl:
-          status === "ready" && row.pdfFileId ? builtPdfUrl(row.id) : null,
+          status === "ready" && row.pdfFileId
+            ? builtPdfUrl(row.id, row.readyAt)
+            : null,
         createdAt: row.createdAt.toISOString(),
+        updatedAt: row.updatedAt.toISOString(),
       };
     }),
     tailored: tailored.map((row) => ({
@@ -194,6 +219,8 @@ export type BuiltCvDetail = {
   status: BuiltCvStatus;
   error: string | null;
   createdAt: string;
+  /** Moves with each step, and when it's drawn again in another design. */
+  updatedAt: string;
   readyAt: string | null;
   pageCount: number | null;
   /** Bullets left out so it fits the length asked for. */
@@ -227,6 +254,7 @@ export async function getBuiltCv(id: string): Promise<BuiltCvDetail | null> {
       trimmed: builtCv.trimmed,
       readyAt: builtCv.readyAt,
       createdAt: builtCv.createdAt,
+      updatedAt: builtCv.updatedAt,
       profile: profileSnapshot.profileData,
       current: profile.data,
     })
@@ -257,10 +285,14 @@ export async function getBuiltCv(id: string): Promise<BuiltCvDetail | null> {
     status,
     error: status === "failed" ? (row.error ?? LOST_BUILD_MESSAGE) : null,
     createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
     readyAt: row.readyAt?.toISOString() ?? null,
     pageCount: row.pageCount,
     trimmed: row.trimmed,
-    pdfUrl: status === "ready" && row.pdfFileId ? builtPdfUrl(row.id) : null,
+    pdfUrl:
+      status === "ready" && row.pdfFileId
+        ? builtPdfUrl(row.id, row.readyAt)
+        : null,
     keywords,
     flags: row.claimFlags?.flags ?? [],
     lines: row.content
@@ -303,6 +335,94 @@ export async function getBuiltCvPdf(
   };
 }
 
+/**
+ * A built CV as a Word file, made from the same content as its PDF, in its
+ * design, with the owner's links as saved now (as its PDF was drawn).
+ */
+export async function getBuiltCvDocx(
+  id: string,
+): Promise<{ bytes: Uint8Array<ArrayBuffer>; filename: string } | null> {
+  await getCurrentUser();
+  const [[row], inputs] = await Promise.all([
+    db
+      .select({
+        request: builtCv.request,
+        content: builtCv.content,
+        claimFlags: builtCv.claimFlags,
+        profile: profileSnapshot.profileData,
+      })
+      .from(builtCv)
+      .innerJoin(profileSnapshot, eq(profileSnapshot.id, builtCv.snapshotId))
+      .where(and(eq(builtCv.id, id), eq(builtCv.status, "ready"))),
+    getTailorInputs(),
+  ]);
+  if (!row?.content) return null;
+  const links = ownerLinks(row.profile.links, inputs?.answers?.links ?? null);
+  return {
+    bytes: await renderCvDocx(
+      builtCvView(row.content, row.claimFlags, row.profile, row.request, links),
+      row.request.template ?? LEGACY_CV_TEMPLATE,
+    ),
+    filename: builtCvFilename(
+      row.profile.basics.name,
+      row.request.targetTitle,
+      "docx",
+    ),
+  };
+}
+
+/**
+ * Draws a ready CV again in another design: its words stay as they are, so
+ * there's no Claude call. Returns the design it had, to put back if the
+ * drawing can't be started, or null when the CV isn't ready (or is in that
+ * design already). The caller sends the Inngest event.
+ */
+export async function redrawBuiltCv(
+  id: string,
+  template: CvTemplate,
+): Promise<CvTemplate | null> {
+  await getCurrentUser();
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ request: builtCv.request })
+      .from(builtCv)
+      .where(and(eq(builtCv.id, id), eq(builtCv.status, "ready")))
+      .for("update");
+    if (!row) return null;
+    const before = row.request.template ?? LEGACY_CV_TEMPLATE;
+    if (before === template) return null;
+    await tx
+      .update(builtCv)
+      .set({
+        request: { ...row.request, template },
+        status: "rendering",
+        error: null,
+      })
+      .where(eq(builtCv.id, id));
+    return before;
+  });
+}
+
+/** Puts a CV back as it was when its redrawing couldn't be started. */
+export async function undoRedraw(
+  id: string,
+  template: CvTemplate,
+): Promise<void> {
+  await getCurrentUser();
+  await db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({ request: builtCv.request })
+      .from(builtCv)
+      .where(and(eq(builtCv.id, id), eq(builtCv.status, "rendering")))
+      .for("update");
+    if (!row) return;
+    await tx
+      .update(builtCv)
+      .set({ request: { ...row.request, template }, status: "ready" })
+      .where(eq(builtCv.id, id));
+  });
+}
+
 export type CvBuilderStart = {
   form: CvBuildForm;
   /** What the CV's header shows, from the profile. */
@@ -337,10 +457,15 @@ export async function getCvBuilderStart(
   }
   const preferences = preferencesSchema.safeParse(current.preferences);
   const { basics, links } = data;
+  const { cvTemplate } = await readSettings();
   return {
     form:
       form ??
-      defaultCvForm(data, preferences.success ? preferences.data : null),
+      defaultCvForm(
+        data,
+        preferences.success ? preferences.data : null,
+        cvTemplate,
+      ),
     name: basics.name,
     contact: [
       basics.email,
@@ -381,6 +506,7 @@ export async function createBuiltCv(
     const { skillIds, added } = resolveLeadSkills(current.data, form.skills);
     let snapshotId: string | undefined;
     if (added.length > 0) {
+      await keepScoringBaseline(tx);
       const data: MasterProfile = masterProfileSchema.parse({
         ...current.data,
         skills: [...current.data.skills, ...added],
@@ -411,6 +537,7 @@ export async function createBuiltCv(
       length: form.length,
       sections: form.sections,
       note: form.note,
+      template: form.template,
     };
     const [created] = await tx
       .insert(builtCv)

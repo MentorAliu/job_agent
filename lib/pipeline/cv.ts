@@ -9,6 +9,8 @@ import type { MasterProfile } from "@/lib/schemas/profile";
 
 import { getStorage } from "@/lib/storage";
 
+import { keepScoringBaseline } from "./rescore";
+
 // Database and storage access for step 1 of the pipeline. Inngest runs these
 // with no signed-in user, so they live here rather than in lib/dal, where
 // every function checks the session.
@@ -144,6 +146,7 @@ export async function saveParsedProfile(
   data: MasterProfile,
 ): Promise<void> {
   await db.transaction(async (tx) => {
+    await keepScoringBaseline(tx);
     await tx
       .update(file)
       .set({ parseStatus: "succeeded", parsedProfile: data, parseError: null })

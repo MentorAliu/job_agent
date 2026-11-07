@@ -25,6 +25,7 @@ import {
 } from "../lib/schemas/cv-builder";
 import {
   ROLE_FOCUS,
+  RUN_TRIGGERS,
   type JobFacts,
   type RunStats,
   type ScoreReasons,
@@ -46,6 +47,7 @@ import {
   type PriceTable,
   type StageModels,
 } from "../lib/schemas/settings";
+import type { CvTemplate } from "../lib/schemas/cv-template";
 import { ENGINE_CHECK_STATUSES, SETUP_CV_PATHS } from "../lib/schemas/setup";
 import {
   DOCUMENT_KINDS,
@@ -76,7 +78,7 @@ export const eligibility = pgEnum("eligibility", [
 ]);
 export const roleFocus = pgEnum("role_focus", ROLE_FOCUS);
 export const documentKind = pgEnum("document_kind", DOCUMENT_KINDS);
-export const runTrigger = pgEnum("run_trigger", ["scheduled", "manual"]);
+export const runTrigger = pgEnum("run_trigger", RUN_TRIGGERS);
 export const runStatus = pgEnum("run_status", [
   "running",
   "succeeded",
@@ -148,6 +150,13 @@ export const profile = pgTable(
     cvFileId: uuid("cv_file_id").references(() => file.id, {
       onDelete: "set null",
     }),
+    /**
+     * The scoring key (scoringKey in lib/claude/score.ts) of the profile and
+     * preferences the roles were last scored against. A search that finds
+     * it changed scores the waiting and recently passed roles again. Null
+     * until a search or a save first sets it.
+     */
+    scoringKey: text("scoring_key"),
     updatedAt: updatedAt(),
   },
   (t) => [check("profile_single_row", sql`${t.id} = 1`)],
@@ -463,6 +472,11 @@ export const settings = pgTable(
     searchDomains: jsonb("search_domains").$type<string[]>(),
     /** What the agent steps run on. */
     agentEngine: agentEngine("agent_engine").notNull().default("claude_api"),
+    /**
+     * The design apply-kit CVs and letters are drawn in, and the CV builder's
+     * first choice. Null until the owner picks one: the default design.
+     */
+    cvTemplate: text("cv_template").$type<CvTemplate>(),
     updatedAt: updatedAt(),
   },
   (t) => [check("settings_single_row", sql`${t.id} = 1`)],

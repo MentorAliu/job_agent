@@ -48,6 +48,7 @@ const from: EditFrom = {
   title: "Lead Frontend Engineer",
   sections: ["projects", "education", "languages"],
   length: "one_page",
+  template: "executive",
 };
 
 const refs = (form: CvEditForm, roleId: string) =>
@@ -57,7 +58,7 @@ const refs = (form: CvEditForm, roleId: string) =>
 
 describe("editorStart", () => {
   it("opens with everything in the profile, as the uploaded CV had it", () => {
-    const { form, catalogue } = editorStart(profile, null);
+    const { form, catalogue } = editorStart(profile, null, "modern");
     expect(cvEditFormSchema.safeParse(form).success).toBe(true);
     expect(form.title).toBe("Senior Frontend Engineer");
     expect(form.summary).toBe(profile.basics.summary);
@@ -70,13 +71,28 @@ describe("editorStart", () => {
     expect(form.skillIds).toEqual(profile.skills.map((skill) => skill.id));
     expect(form.sections).toEqual(["education", "certifications", "languages"]);
     expect(form.length).toBe("one_page");
+    // The design set in Settings.
+    expect(form.template).toBe("modern");
     expect(catalogue.roles[0]).toMatchObject({
       title: "Senior Frontend Engineer, Northwind Analytics",
     });
   });
 
+  it("keeps a CV's own design, and gives a kit's CV the Settings one", () => {
+    expect(editorStart(profile, from, "modern").form.template).toBe(
+      "executive",
+    );
+    const kit = { ...from, template: null };
+    expect(editorStart(profile, kit, "minimal").form.template).toBe("minimal");
+    const { form } = editorStart(profile, from, "modern");
+    expect(
+      editedContent({ ...form, template: "classic" }, profile, from).content
+        .template,
+    ).toBe("classic");
+  });
+
   it("opens a CV with the lines it shows, and offers the profile's other bullets", () => {
-    const { form, catalogue } = editorStart(profile, from);
+    const { form, catalogue } = editorStart(profile, from, "modern");
     expect(cvEditFormSchema.safeParse(form).success).toBe(true);
     expect(form.title).toBe("Lead Frontend Engineer");
     expect(form.summary).toMatch(/^Senior frontend engineer with 7 years/);
@@ -113,7 +129,7 @@ describe("editorStart", () => {
 
 describe("editedContent", () => {
   it("saves the lines kept and added, in the profile's order", () => {
-    const { form } = editorStart(profile, from);
+    const { form } = editorStart(profile, from, "modern");
     const edited: CvEditForm = {
       ...form,
       title: "Frontend Lead",
@@ -170,7 +186,7 @@ describe("editedContent", () => {
   });
 
   it("takes the summary in the owner's words, or none", () => {
-    const { form } = editorStart(profile, from);
+    const { form } = editorStart(profile, from, "modern");
     const written = editedContent(
       { ...form, summary: "Frontend lead who ships." },
       profile,
@@ -187,7 +203,7 @@ describe("editedContent", () => {
   });
 
   it("refuses a line that isn't on the CV or under that role in the profile", () => {
-    const { form } = editorStart(profile, from);
+    const { form } = editorStart(profile, from, "modern");
     const withLine = (roleId: string, ref: string): CvEditForm => ({
       ...form,
       experience: form.experience.map((entry) =>
@@ -221,7 +237,7 @@ describe("editedContent", () => {
   });
 
   it("refuses a role the profile doesn't have anymore", () => {
-    const { form } = editorStart(profile, null);
+    const { form } = editorStart(profile, null, "modern");
     expect(() =>
       editedContent(
         {

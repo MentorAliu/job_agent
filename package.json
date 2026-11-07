@@ -18,7 +18,7 @@
     "reset-password": "node scripts/reset-password.mjs"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.135.0",
+    "@anthropic-ai/sdk": "^1.4.0",
     "@base-ui/react": "^1.9.0",
     "@better-auth/drizzle-adapter": "^1.7.10",
     "@hookform/resolvers": "^5.9.2",

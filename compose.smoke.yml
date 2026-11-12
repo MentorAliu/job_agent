@@ -30,7 +30,7 @@ services:
         condition: service_healthy
 
   fake-claude:
-    image: node:24.13.0-slim
+    image: node:26.13.0-slim
     profiles: ["app"]
     command: ["node", "/srv/fake-claude/server.mjs"]
     environment:

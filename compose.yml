@@ -53,7 +53,7 @@ services:
 
   # Inngest Dev Server for local development. It calls the app on your machine.
   inngest-dev:
-    image: inngest/inngest:v1.49.0 # the version the app is tested with; Dependabot proposes newer ones
+    image: inngest/inngest:v1.51.0 # the version the app is tested with; Dependabot proposes newer ones
     profiles: ["dev"]
     command: "inngest dev -u http://host.docker.internal:${APP_PORT:-3000}/api/inngest"
     ports:
@@ -118,7 +118,7 @@ services:
   # Self-hosted Inngest server: history in the `inngest` Postgres database,
   # queue and run state in Redis (without Redis it keeps them inside the container).
   inngest:
-    image: inngest/inngest:v1.49.0 # the version the app is tested with; Dependabot proposes newer ones
+    image: inngest/inngest:v1.51.0 # the version the app is tested with; Dependabot proposes newer ones
     profiles: ["app"]
     restart: unless-stopped
     command: "inngest start --sdk-url http://web:3000/api/inngest --poll-interval 60"
